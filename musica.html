@@ -71,17 +71,19 @@
   <div class="page-head">
     <div class="eyebrow">★ Lançado</div>
     <h1>O hino do <span class="accent">GABDIGEP</span></h1>
-    <p>A trilha oficial de "DIGEP por Dentro" — com letra ao vivo pra cantar junto.</p>
+    <p>As trilhas oficiais de "DIGEP por Dentro" — com letra pra cantar junto.</p>
   </div>
 
+  <div class="faixas-row" id="faixasRow"></div>
+
   <div class="musica-layout">
-    <div class="album-art">
-      <img src="Capa Música GABDIGEP.png" alt="Capa da música &quot;Abre as Portas&quot; — GABDIGEP">
+    <div class="album-art" id="albumArt">
+      <img id="capaImg" src="" alt="">
     </div>
 
     <div class="player-card">
-      <div class="track-title">Abre a Porta</div>
-      <div class="track-artist">GABDIGEP</div>
+      <div class="track-title" id="trackTitulo"></div>
+      <div class="track-artist" id="trackArtista"></div>
 
       <div class="seek-row">
         <input type="range" id="seek" min="0" max="100" step="0.1" value="0">
@@ -108,10 +110,7 @@
     </div>
   </div>
 
-  <audio id="audio" preload="metadata">
-    <source src="Abre a Porta.mp3" type="audio/mpeg">
-    Seu navegador não suporta áudio incorporado.
-  </audio>
+  <audio id="audio" preload="metadata"></audio>
 </main>
 
 <footer>
@@ -149,6 +148,10 @@ const seek = document.getElementById('seek');
 const tempoAtual = document.getElementById('tempoAtual');
 const tempoTotal = document.getElementById('tempoTotal');
 const letraWrap = document.getElementById('letra');
+const faixasRow = document.getElementById('faixasRow');
+const capaImg = document.getElementById('capaImg');
+const trackTitulo = document.getElementById('trackTitulo');
+const trackArtista = document.getElementById('trackArtista');
 
 function formatar(s) {
   s = Math.max(0, Math.floor(s));
@@ -157,47 +160,91 @@ function formatar(s) {
   return `${m}:${sec}`;
 }
 
-const linhasEl = [];
-let estrofeEl = null;
-let estrofeNum = null;
-LETRA_MUSICA.forEach((linha) => {
-  if (linha.estrofe !== estrofeNum) {
-    estrofeNum = linha.estrofe;
-    estrofeEl = document.createElement('div');
-    estrofeEl.className = 'estrofe' + (linha.refrao ? ' refrao' : '');
-    letraWrap.appendChild(estrofeEl);
+function pad(n) { return String(n).padStart(2, '0'); }
+
+let cardSelecionado = null;
+
+function selecionarFaixa(fx, cardEl) {
+  if (cardSelecionado) cardSelecionado.classList.remove('selecionada');
+  cardEl.classList.add('selecionada');
+  cardSelecionado = cardEl;
+
+  capaImg.src = fx.capa;
+  capaImg.alt = 'Capa da música "' + fx.titulo + '"';
+  trackTitulo.textContent = fx.titulo;
+  trackArtista.textContent = fx.artista;
+
+  audio.pause();
+  audio.src = fx.audio;
+  audio.load();
+  iconPlay.style.display = '';
+  iconPause.style.display = 'none';
+
+  letraWrap.innerHTML = '';
+  let estrofeEl = null;
+  let estrofeNum = null;
+  fx.letra.forEach((linha) => {
+    if (linha.estrofe !== estrofeNum) {
+      estrofeNum = linha.estrofe;
+      estrofeEl = document.createElement('div');
+      estrofeEl.className = 'estrofe' + (linha.refrao ? ' refrao' : '');
+      letraWrap.appendChild(estrofeEl);
+    }
+    const p = document.createElement('p');
+    p.textContent = linha.texto;
+    estrofeEl.appendChild(p);
+  });
+}
+
+FAIXAS.forEach((fx) => {
+  const lancado = fx.status === 'lancado';
+  const card = document.createElement('div');
+  card.className = 'faixa-card' + (lancado ? '' : ' locked');
+  card.innerHTML = `
+    <div class="faixa-cover">
+      <span class="status-badge ${lancado ? 'lancado' : 'embreve'}">${lancado ? '★ Lançado' : 'Em breve'}</span>
+      ${lancado
+        ? `<img src="${fx.capa}" alt="Capa de ${fx.titulo}">`
+        : `<svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="18" r="2.3"/><circle cx="17" cy="16" r="2.3"/><path d="M9.3 18V6.5L19.3 4.5V16"/></svg>`}
+      ${lancado ? '' : `<svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`}
+      ${lancado ? '' : `<div class="locked-tip"><div><strong>Estamos preparando...</strong>A próxima faixa já está a caminho. Aguarde! 👋</div></div>`}
+    </div>
+    <div class="faixa-body">
+      <div class="faixa-num">Faixa ${pad(fx.numero)}</div>
+      <h3>${fx.titulo}</h3>
+    </div>
+  `;
+  if (lancado) {
+    card.addEventListener('click', () => selecionarFaixa(fx, card));
+  } else {
+    card.addEventListener('click', () => {
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+      const tip = card.querySelector('.locked-tip');
+      tip.classList.add('show');
+      clearTimeout(card._tipTimer);
+      card._tipTimer = setTimeout(() => tip.classList.remove('show'), 2500);
+    });
   }
-  const p = document.createElement('p');
-  p.textContent = linha.texto;
-  estrofeEl.appendChild(p);
-  linhasEl.push(p);
+  faixasRow.appendChild(card);
 });
+
+const primeiraLancada = FAIXAS.find((fx) => fx.status === 'lancado');
+if (primeiraLancada) {
+  const idx = FAIXAS.indexOf(primeiraLancada);
+  selecionarFaixa(primeiraLancada, faixasRow.children[idx]);
+}
 
 function aoCarregarMetadados() {
   tempoTotal.textContent = formatar(audio.duration);
   seek.max = audio.duration;
 }
 audio.addEventListener('loadedmetadata', aoCarregarMetadados);
-if (audio.readyState >= 1) aoCarregarMetadados();
-
-// ajuste fino: o destaque estava chegando atrasado em relação ao áudio,
-// então cada linha acende ANTECIPACAO_SEGUNDOS mais cedo que a marcação original
-const ANTECIPACAO_SEGUNDOS = 2;
 
 audio.addEventListener('timeupdate', () => {
   tempoAtual.textContent = formatar(audio.currentTime);
   if (!seek.matches(':active')) seek.value = audio.currentTime;
-
-  // cada linha fica em destaque do seu "t" até o "t" da próxima linha
-  const tempoAjustado = audio.currentTime + ANTECIPACAO_SEGUNDOS;
-  let atualIdx = -1;
-  for (let i = 0; i < LETRA_MUSICA.length; i++) {
-    if (tempoAjustado >= LETRA_MUSICA[i].t) atualIdx = i;
-  }
-  linhasEl.forEach((el, i) => {
-    el.classList.toggle('active', i === atualIdx);
-    el.classList.toggle('past', i < atualIdx);
-  });
 });
 
 audio.addEventListener('ended', () => {

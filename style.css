@@ -433,6 +433,48 @@ footer strong { color: var(--gold); }
 @media (max-width: 640px) { .game-frame iframe { height: 440px; } }
 
 /* ----- MÚSICA ----- */
+.faixas-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 200px));
+  gap: 18px;
+  margin-top: 28px;
+}
+.faixa-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--navy-800);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.faixa-card:hover { transform: translateY(-4px); border-color: rgba(240,192,64,0.4); }
+.faixa-card.selecionada { border-color: var(--gold); }
+.faixa-card .faixa-cover {
+  position: relative; aspect-ratio: 1/1; overflow: hidden;
+  background: var(--navy-900);
+  display: flex; align-items: center; justify-content: center;
+}
+.faixa-card .faixa-cover img { width: 100%; height: 100%; object-fit: cover; filter: none; }
+.faixa-card.locked .faixa-cover img { filter: grayscale(0.6) brightness(0.35); }
+.faixa-card .faixa-cover svg.placeholder-icon { width: 40px; height: 40px; color: var(--muted-dim); }
+.faixa-card .status-badge {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  font-family: 'Barlow Semi Condensed', sans-serif; font-weight: 700; font-size: 10px;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 999px;
+}
+.faixa-card .status-badge.lancado { background: var(--gold); color: var(--navy-900); }
+.faixa-card .status-badge.embreve { background: rgba(20,36,73,0.9); color: var(--muted); border: 1px solid var(--line); }
+.faixa-card .lock-icon {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 34px; height: 34px; color: rgba(244,239,226,0.85);
+}
+.faixa-card .faixa-body { padding: 10px 12px 14px; }
+.faixa-card .faixa-num { font-family: 'Barlow Semi Condensed', sans-serif; font-size: 10.5px; letter-spacing: 1px; color: var(--gold); font-weight: 700; text-transform: uppercase; }
+.faixa-card h3 { font-size: 15px; margin: 3px 0 0; color: var(--cream); }
+.faixa-card.shake { animation: card-shake 0.4s ease; }
+
 .musica-layout { display: grid; grid-template-columns: 320px 1fr; gap: 44px; margin-top: 30px; align-items: start; }
 @media (max-width: 820px) { .musica-layout { grid-template-columns: 1fr; } }
 
@@ -480,16 +522,11 @@ footer strong { color: var(--gold); }
 .letra .estrofe.refrao { padding-left: 16px; border-left: 3px solid rgba(240,192,64,0.35); }
 .letra p {
   font-family: 'Barlow Semi Condensed', sans-serif;
-  font-weight: 600; font-size: 23px; line-height: 1.5; color: var(--muted-dim);
-  transition: color 0.3s ease, transform 0.3s ease;
-  transform-origin: left center;
+  font-weight: 600; font-size: 23px; line-height: 1.5; color: var(--gold);
+  text-shadow: 0 0 16px rgba(240,192,64,0.35);
   margin: 0;
 }
-.letra .estrofe.refrao p { color: var(--muted); font-weight: 700; }
-.letra .estrofe.refrao p.active,
-.letra p.active { color: var(--gold); transform: scale(1.03); text-shadow: 0 0 22px rgba(240,192,64,0.55); }
-.letra p.past { color: var(--muted); }
-.letra .estrofe.refrao p.past { color: var(--muted-dim); }
+.letra .estrofe.refrao p { font-weight: 700; }
 
 @media (max-width: 720px) {
   .letra p { font-size: 18px; }
