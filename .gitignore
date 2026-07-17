@@ -5,3 +5,6 @@ DIGEP por Dentro - Portal (visual).html
 
 # Config local do Claude Code, não faz parte do site
 .claude/
+
+# Cache local do Wrangler (Cloudflare Pages)
+.wrangler/

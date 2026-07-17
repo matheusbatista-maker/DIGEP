@@ -59,8 +59,7 @@ const FAIXAS = [
     artista: 'GABDIGEP',
     status: 'lancado',
     audio: 'Musica 2.mp3',
-    // capa provisória (extraída do próprio arquivo de áudio) — trocar quando a capa definitiva chegar
-    capa: 'Capa Musica 2.jpg',
+    capa: 'Capa Musica 2.png',
     letra: [
       { texto: 'Alô, minha gente da DIGEP!', estrofe: 0 },
       { texto: 'O Gabinete pode até puxar o bloco...', estrofe: 0 },
