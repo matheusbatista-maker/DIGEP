@@ -252,16 +252,19 @@ btnPublicar.addEventListener('click', async () => {
   const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
   const headers = { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' };
 
-  try {
-    const getResp = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
+  // Faz uma tentativa de publicação (lê o sha mais recente e grava por cima).
+  // Sempre com cache: 'no-store' -- sem isso o navegador pode reaproveitar uma
+  // resposta antiga do GET e mandar um sha desatualizado no PUT (erro 409).
+  async function tentarPublicarUmaVez() {
+    const getResp = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers, cache: 'no-store' });
     if (!getResp.ok) {
       throw new Error(`Não consegui ler o arquivo no GitHub (HTTP ${getResp.status}). Confira repositório, branch, caminho e token.`);
     }
     const getData = await getResp.json();
     const textoAtual = base64ParaTexto(getData.content);
     const textoNovo = aplicarMudancasNoTexto(textoAtual, pendentes);
-
     const numerosAlterados = Object.keys(pendentes);
+
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
@@ -275,7 +278,25 @@ btnPublicar.addEventListener('click', async () => {
 
     if (!putResp.ok) {
       const errBody = await putResp.json().catch(() => ({}));
-      throw new Error(`Falha ao publicar (HTTP ${putResp.status}): ${errBody.message || 'erro desconhecido'}.`);
+      const erro = new Error(`Falha ao publicar (HTTP ${putResp.status}): ${errBody.message || 'erro desconhecido'}.`);
+      erro.status = putResp.status;
+      throw erro;
+    }
+    return numerosAlterados;
+  }
+
+  try {
+    let numerosAlterados;
+    try {
+      numerosAlterados = await tentarPublicarUmaVez();
+    } catch (err) {
+      // sha desatualizado (409) costuma ser só uma corrida com o cache do
+      // navegador -- tenta mais uma vez automaticamente antes de desistir.
+      if (err.status === 409) {
+        numerosAlterados = await tentarPublicarUmaVez();
+      } else {
+        throw err;
+      }
     }
 
     numerosAlterados.forEach((numeroStr) => {
