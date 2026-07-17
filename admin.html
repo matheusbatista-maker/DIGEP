@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel Admin — DIGEP por Dentro</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script>
+if (sessionStorage.getItem('digepAdminAuth') !== '1') {
+  location.replace('login.html');
+}
+</script>
+
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <path id="arcTop" d="M35 120 A85 85 0 0 1 205 120" fill="none"/>
+    <path id="arcBot" d="M23 120 A97 97 0 0 0 217 120" fill="none"/>
+    <g id="gRing">
+      <circle cx="120" cy="120" r="115" fill="#0C1A33"/>
+      <circle cx="120" cy="120" r="111" fill="#E3B23C"/>
+      <circle cx="120" cy="120" r="105" fill="#0C1A33"/>
+      <circle cx="120" cy="120" r="78" fill="#E3B23C"/>
+      <circle cx="120" cy="120" r="73" fill="#12274a"/>
+      <text font-family="'Barlow Semi Condensed', sans-serif" font-weight="700" font-size="18" letter-spacing="2" fill="#E3B23C">
+        <textPath href="#arcTop" startOffset="50%" text-anchor="middle">GABDIGEP</textPath>
+      </text>
+      <text font-family="'Barlow Semi Condensed', sans-serif" font-weight="600" font-size="13" letter-spacing="1.6" fill="#E3B23C">
+        <textPath href="#arcBot" startOffset="50%" text-anchor="middle">TRIBUNAL DE JUSTIÇA</textPath>
+      </text>
+      <path d="M20 120 L27 114 L34 120 L27 126 Z" fill="#E3B23C"/>
+      <path d="M206 120 L213 114 L220 120 L213 126 Z" fill="#E3B23C"/>
+    </g>
+    <g id="gShield">
+      <path d="M66 66 Q66 56 78 56 H162 Q174 56 174 66 V118 Q174 164 120 193 Q66 164 66 118 Z" fill="#0C1A33"/>
+      <path d="M71 69 Q71 61 81 61 H159 Q169 61 169 69 V117 Q169 160 120 187 Q71 160 71 117 Z" fill="#E3B23C"/>
+      <path d="M75 72 Q75 65 84 65 H156 Q165 65 165 72 V116 Q165 157 120 182 Q75 157 75 116 Z" fill="#1E3A64"/>
+    </g>
+    <g id="gScales" transform="translate(0 -7)" stroke="#0C1A33" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">
+      <circle cx="90" cy="120" r="10" fill="#F4ECD6"/>
+      <path d="M72 156 Q72 134 90 134 Q108 134 108 156 Z" fill="#F4ECD6"/>
+      <circle cx="150" cy="120" r="10" fill="#F4ECD6"/>
+      <path d="M132 156 Q132 134 150 134 Q168 134 168 156 Z" fill="#F4ECD6"/>
+      <circle cx="120" cy="106" r="13" fill="#E3B23C"/>
+      <path d="M95 160 Q95 129 120 129 Q145 129 145 160 Z" fill="#E3B23C"/>
+    </g>
+    <g id="gStars" transform="translate(0 -4)" fill="#E3B23C" stroke="#0C1A33" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M100 76 L102 81 L107 82 L102 84 L100 89 L98 84 L93 82 L98 81 Z"/>
+      <path d="M120 71 L123 78 L130 79 L123 81 L120 88 L117 81 L110 79 L117 78 Z"/>
+      <path d="M140 76 L142 81 L147 82 L142 84 L140 89 L138 84 L133 82 L138 81 Z"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="topbar">PODER JUDICIÁRIO — ESTADO DO TOCANTINS</div>
+
+<div class="navwrap">
+  <nav class="navbar">
+    <a class="brand" href="index.html">
+      <svg viewBox="40 48 160 150"><use href="#gShield"/><use href="#gScales"/></svg>
+      <span class="brand-text"><span class="brand-main">GABDIGEP</span><span class="brand-sub">DIGEP por Dentro</span></span>
+    </a>
+    <div class="nav-right">
+      <a class="btn outline" href="index.html" style="padding:9px 18px; font-size:13px;">Ver site</a>
+      <button class="admin-logout" id="btnSair">Sair</button>
+    </div>
+  </nav>
+</div>
+
+<main>
+  <div class="page-head">
+    <div class="eyebrow">Painel administrativo</div>
+    <h1>Controle de <span class="accent">lançamento</span></h1>
+    <p>Ative ou desative a publicação de cada edição do gibi no site. As alterações só valem pra todo mundo depois de clicar em "Publicar alterações".</p>
+  </div>
+
+  <div class="admin-bar">
+    <div class="who">Logado como <strong id="quemEsta">—</strong></div>
+  </div>
+
+  <div class="admin-editions" id="adminEditions"></div>
+
+  <div class="admin-publish-row">
+    <button class="btn" id="btnPublicar" disabled>Publicar alterações</button>
+    <span class="publish-status" id="publishStatus"></span>
+  </div>
+
+  <div class="token-box">
+    <h3>Configuração do GitHub</h3>
+    <p>
+      Preencha uma única vez neste navegador. Use um token de acesso <strong>fine-grained</strong> restrito
+      só a este repositório, com permissão apenas de "Contents: Read and write". Ele fica salvo só aqui
+      (localStorage) e é usado só pra chamar a API do GitHub direto desta página — nunca é enviado a mais ninguém.
+    </p>
+    <div class="token-row">
+      <div class="access-field" style="flex:1; min-width:200px;">
+        <label for="cfgRepo">Repositório (usuário/repo)</label>
+        <input type="text" id="cfgRepo" placeholder="seu-usuario/digep-por-dentro">
+      </div>
+      <div class="access-field" style="width:110px;">
+        <label for="cfgBranch">Branch</label>
+        <input type="text" id="cfgBranch" placeholder="main">
+      </div>
+      <div class="access-field" style="width:170px;">
+        <label for="cfgPath">Caminho do arquivo</label>
+        <input type="text" id="cfgPath" placeholder="gibi-data.js">
+      </div>
+      <div class="access-field" style="flex:1; min-width:200px;">
+        <label for="cfgToken">Token de acesso</label>
+        <input type="password" id="cfgToken" placeholder="github_pat_...">
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <strong>GABDIGEP</strong> — Gabinete da Diretoria de Gestão de Pessoas · Tribunal de Justiça do Estado do Tocantins
+</footer>
+
+<script src="gibi-data.js"></script>
+<script>
+document.getElementById('quemEsta').textContent = sessionStorage.getItem('digepAdminUser') || 'admin';
+
+document.getElementById('btnSair').addEventListener('click', () => {
+  sessionStorage.removeItem('digepAdminAuth');
+  sessionStorage.removeItem('digepAdminUser');
+  location.href = 'login.html';
+});
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+const baseline = {};
+EDICOES_GIBI.forEach((ed) => { baseline[ed.numero] = ed.status; });
+const pendentes = {}; // numero -> novo status, só entra aqui quando difere do baseline
+
+const cont = document.getElementById('adminEditions');
+const btnPublicar = document.getElementById('btnPublicar');
+const publishStatus = document.getElementById('publishStatus');
+
+function atualizarBotaoPublicar() {
+  const temMudanca = Object.keys(pendentes).length > 0;
+  btnPublicar.disabled = !temMudanca;
+}
+
+function render() {
+  cont.innerHTML = '';
+  EDICOES_GIBI.forEach((ed) => {
+    const statusAtual = pendentes.hasOwnProperty(ed.numero) ? pendentes[ed.numero] : ed.status;
+    const lancado = statusAtual === 'lancado';
+    const pronto = ed.paginas > 0 && !!ed.pastaPaginas;
+
+    const card = document.createElement('div');
+    card.className = 'admin-edition-card';
+    card.innerHTML = `
+      <div class="cover"><img src="${ed.capa}" alt=""></div>
+      <div class="info">
+        <div class="num">Edição ${pad(ed.numero)}</div>
+        <h3>${ed.titulo}</h3>
+        <div class="ready-note ${pronto ? 'ok' : 'bad'}">
+          ${pronto ? `✓ Arte pronta (${ed.paginas} páginas)` : '⚠ Faltam páginas — não dá pra publicar ainda'}
+        </div>
+      </div>
+      <div class="toggle-status">
+        <span class="label ${!lancado ? 'on' : ''}">Em breve</span>
+        <label class="switch">
+          <input type="checkbox" data-numero="${ed.numero}" ${lancado ? 'checked' : ''} ${pronto ? '' : 'disabled'}>
+          <span class="slider"></span>
+        </label>
+        <span class="label ${lancado ? 'on' : ''}">Lançado</span>
+      </div>
+    `;
+    cont.appendChild(card);
+  });
+
+  cont.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+    input.addEventListener('change', (e) => {
+      const numero = Number(e.target.dataset.numero);
+      const novoStatus = e.target.checked ? 'lancado' : 'em_breve';
+      if (novoStatus === baseline[numero]) delete pendentes[numero];
+      else pendentes[numero] = novoStatus;
+      atualizarBotaoPublicar();
+      render();
+    });
+  });
+}
+render();
+
+// ----- config do GitHub (salva em localStorage deste navegador) -----
+const cfgRepo = document.getElementById('cfgRepo');
+const cfgBranch = document.getElementById('cfgBranch');
+const cfgPath = document.getElementById('cfgPath');
+const cfgToken = document.getElementById('cfgToken');
+
+cfgRepo.value = localStorage.getItem('digepGhRepo') || '';
+cfgBranch.value = localStorage.getItem('digepGhBranch') || 'main';
+cfgPath.value = localStorage.getItem('digepGhPath') || 'gibi-data.js';
+cfgToken.value = localStorage.getItem('digepGhToken') || '';
+
+function mostrarStatus(msg, tipo) {
+  publishStatus.textContent = msg;
+  publishStatus.className = 'publish-status' + (tipo ? ' ' + tipo : '');
+}
+
+function aplicarMudancasNoTexto(textoOriginal, mudancas) {
+  return textoOriginal.replace(
+    /(\{\s*numero:\s*(\d+),[\s\S]*?status:\s*')(lancado|em_breve)(')/g,
+    (match, prefixo, numeroStr, statusAtual, sufixo) => {
+      const numero = Number(numeroStr);
+      if (Object.prototype.hasOwnProperty.call(mudancas, numero)) {
+        return prefixo + mudancas[numero] + sufixo;
+      }
+      return match;
+    }
+  );
+}
+
+function base64ParaTexto(base64) {
+  const bytes = Uint8Array.from(atob(base64.replace(/\n/g, '')), (c) => c.charCodeAt(0));
+  return new TextDecoder('utf-8').decode(bytes);
+}
+
+function textoParaBase64(texto) {
+  const bytes = new TextEncoder().encode(texto);
+  let binario = '';
+  bytes.forEach((b) => { binario += String.fromCharCode(b); });
+  return btoa(binario);
+}
+
+btnPublicar.addEventListener('click', async () => {
+  const repo = cfgRepo.value.trim();
+  const branch = cfgBranch.value.trim() || 'main';
+  const path = cfgPath.value.trim() || 'gibi-data.js';
+  const token = cfgToken.value.trim();
+
+  if (!repo || !token) {
+    mostrarStatus('Preencha repositório e token do GitHub antes de publicar.', 'err');
+    return;
+  }
+  localStorage.setItem('digepGhRepo', repo);
+  localStorage.setItem('digepGhBranch', branch);
+  localStorage.setItem('digepGhPath', path);
+  localStorage.setItem('digepGhToken', token);
+
+  btnPublicar.disabled = true;
+  mostrarStatus('Publicando...', '');
+
+  const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+  const headers = { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' };
+
+  try {
+    const getResp = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers });
+    if (!getResp.ok) {
+      throw new Error(`Não consegui ler o arquivo no GitHub (HTTP ${getResp.status}). Confira repositório, branch, caminho e token.`);
+    }
+    const getData = await getResp.json();
+    const textoAtual = base64ParaTexto(getData.content);
+    const textoNovo = aplicarMudancasNoTexto(textoAtual, pendentes);
+
+    const numerosAlterados = Object.keys(pendentes);
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Admin: atualiza status da(s) edição(ões) ${numerosAlterados.join(', ')} do gibi`,
+        content: textoParaBase64(textoNovo),
+        sha: getData.sha,
+        branch
+      })
+    });
+
+    if (!putResp.ok) {
+      const errBody = await putResp.json().catch(() => ({}));
+      throw new Error(`Falha ao publicar (HTTP ${putResp.status}): ${errBody.message || 'erro desconhecido'}.`);
+    }
+
+    numerosAlterados.forEach((numeroStr) => {
+      const numero = Number(numeroStr);
+      baseline[numero] = pendentes[numero];
+      const ed = EDICOES_GIBI.find((e) => e.numero === numero);
+      if (ed) ed.status = pendentes[numero];
+      delete pendentes[numero];
+    });
+
+    mostrarStatus('Publicado! O site no ar deve atualizar em cerca de 1 minuto.', 'ok');
+    render();
+  } catch (err) {
+    mostrarStatus(err.message, 'err');
+  } finally {
+    atualizarBotaoPublicar();
+  }
+});
+</script>
+</body>
+</html>

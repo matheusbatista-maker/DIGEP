@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Música — DIGEP por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <path id="arcTop" d="M35 120 A85 85 0 0 1 205 120" fill="none"/>
+    <path id="arcBot" d="M23 120 A97 97 0 0 0 217 120" fill="none"/>
+    <g id="gRing">
+      <circle cx="120" cy="120" r="115" fill="#0C1A33"/>
+      <circle cx="120" cy="120" r="111" fill="#E3B23C"/>
+      <circle cx="120" cy="120" r="105" fill="#0C1A33"/>
+      <circle cx="120" cy="120" r="78" fill="#E3B23C"/>
+      <circle cx="120" cy="120" r="73" fill="#12274a"/>
+      <text font-family="'Barlow Semi Condensed', sans-serif" font-weight="700" font-size="18" letter-spacing="2" fill="#E3B23C">
+        <textPath href="#arcTop" startOffset="50%" text-anchor="middle">GABDIGEP</textPath>
+      </text>
+      <text font-family="'Barlow Semi Condensed', sans-serif" font-weight="600" font-size="13" letter-spacing="1.6" fill="#E3B23C">
+        <textPath href="#arcBot" startOffset="50%" text-anchor="middle">TRIBUNAL DE JUSTIÇA</textPath>
+      </text>
+      <path d="M20 120 L27 114 L34 120 L27 126 Z" fill="#E3B23C"/>
+      <path d="M206 120 L213 114 L220 120 L213 126 Z" fill="#E3B23C"/>
+    </g>
+    <g id="gShield">
+      <path d="M66 66 Q66 56 78 56 H162 Q174 56 174 66 V118 Q174 164 120 193 Q66 164 66 118 Z" fill="#0C1A33"/>
+      <path d="M71 69 Q71 61 81 61 H159 Q169 61 169 69 V117 Q169 160 120 187 Q71 160 71 117 Z" fill="#E3B23C"/>
+      <path d="M75 72 Q75 65 84 65 H156 Q165 65 165 72 V116 Q165 157 120 182 Q75 157 75 116 Z" fill="#1E3A64"/>
+    </g>
+    <g id="gScales" transform="translate(0 -7)" stroke="#0C1A33" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">
+      <circle cx="90" cy="120" r="10" fill="#F4ECD6"/>
+      <path d="M72 156 Q72 134 90 134 Q108 134 108 156 Z" fill="#F4ECD6"/>
+      <circle cx="150" cy="120" r="10" fill="#F4ECD6"/>
+      <path d="M132 156 Q132 134 150 134 Q168 134 168 156 Z" fill="#F4ECD6"/>
+      <circle cx="120" cy="106" r="13" fill="#E3B23C"/>
+      <path d="M95 160 Q95 129 120 129 Q145 129 145 160 Z" fill="#E3B23C"/>
+    </g>
+    <g id="gStars" transform="translate(0 -4)" fill="#E3B23C" stroke="#0C1A33" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M100 76 L102 81 L107 82 L102 84 L100 89 L98 84 L93 82 L98 81 Z"/>
+      <path d="M120 71 L123 78 L130 79 L123 81 L120 88 L117 81 L110 79 L117 78 Z"/>
+      <path d="M140 76 L142 81 L147 82 L142 84 L140 89 L138 84 L133 82 L138 81 Z"/>
+    </g>
+  </defs>
+</svg>
+
+<div class="topbar">PODER JUDICIÁRIO — ESTADO DO TOCANTINS</div>
+
+<div class="navwrap">
+  <nav class="navbar">
+    <a class="brand" href="index.html">
+      <svg viewBox="40 48 160 150"><use href="#gShield"/><use href="#gScales"/></svg>
+      <span class="brand-text"><span class="brand-main">GABDIGEP</span><span class="brand-sub">DIGEP por Dentro</span></span>
+    </a>
+    <div class="nav-right">
+      <div class="tabs">
+        <a href="index.html">Início</a>
+        <a href="gibi.html">Gibi</a>
+        <a href="game.html">Game</a>
+        <a href="musica.html" class="active">Música</a>
+      </div>
+      <a class="nav-acesso" href="login.html" title="Área restrita">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        Acesso
+      </a>
+    </div>
+  </nav>
+</div>
+
+<main>
+  <div class="page-head">
+    <div class="eyebrow">★ Lançado</div>
+    <h1>O hino do <span class="accent">GABDIGEP</span></h1>
+    <p>As trilhas oficiais de "DIGEP por Dentro" — com letra pra cantar junto.</p>
+  </div>
+
+  <div class="faixas-row" id="faixasRow"></div>
+
+  <div class="musica-layout">
+    <div class="album-art" id="albumArt">
+      <img id="capaImg" src="" alt="">
+    </div>
+
+    <div class="player-card">
+      <div class="track-title" id="trackTitulo"></div>
+      <div class="track-artist" id="trackArtista"></div>
+
+      <div class="seek-row">
+        <input type="range" id="seek" min="0" max="100" step="0.1" value="0">
+      </div>
+      <div class="seek-times">
+        <span id="tempoAtual">0:00</span>
+        <span id="tempoTotal">0:00</span>
+      </div>
+
+      <div class="transport">
+        <button id="btnVoltar10" title="Voltar 10s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 5 12l6 7"/><path d="M18 5v14"/></svg>
+        </button>
+        <button class="play-pause" id="btnPlay">
+          <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+        </button>
+        <button id="btnAvancar10" title="Avançar 10s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5l6 7-6 7"/><path d="M6 5v14"/></svg>
+        </button>
+      </div>
+
+      <div class="letra" id="letra"></div>
+    </div>
+  </div>
+
+  <audio id="audio" preload="metadata"></audio>
+</main>
+
+<footer>
+  <strong>GABDIGEP</strong> — Gabinete da Diretoria de Gestão de Pessoas · Tribunal de Justiça do Estado do Tocantins
+</footer>
+
+<nav class="mobilenav">
+  <ul>
+    <li><a href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9h12v-9"/></svg>
+      Início
+    </a></li>
+    <li><a href="gibi.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c2-1 5-1 8 0v13c-3-1-6-1-8 0z"/><path d="M20 5.5c-2-1-5-1-8 0v13c3-1 6-1 8 0z"/></svg>
+      Gibi
+    </a></li>
+    <li><a href="game.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7.5" width="19" height="9.5" rx="4.5"/><path d="M6.5 12h3M8 10.5v3"/><circle cx="16" cy="10.7" r="0.9" fill="currentColor" stroke="none"/><circle cx="18" cy="12.7" r="0.9" fill="currentColor" stroke="none"/></svg>
+      Game
+    </a></li>
+    <li><a href="musica.html" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="18" r="2.3"/><circle cx="17" cy="16" r="2.3"/><path d="M9.3 18V6.5L19.3 4.5V16"/></svg>
+      Música
+    </a></li>
+  </ul>
+</nav>
+
+<script src="musica-data.js"></script>
+<script>
+const audio = document.getElementById('audio');
+const btnPlay = document.getElementById('btnPlay');
+const iconPlay = document.getElementById('iconPlay');
+const iconPause = document.getElementById('iconPause');
+const seek = document.getElementById('seek');
+const tempoAtual = document.getElementById('tempoAtual');
+const tempoTotal = document.getElementById('tempoTotal');
+const letraWrap = document.getElementById('letra');
+const faixasRow = document.getElementById('faixasRow');
+const capaImg = document.getElementById('capaImg');
+const trackTitulo = document.getElementById('trackTitulo');
+const trackArtista = document.getElementById('trackArtista');
+
+function formatar(s) {
+  s = Math.max(0, Math.floor(s));
+  const m = Math.floor(s / 60);
+  const sec = String(s % 60).padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+let cardSelecionado = null;
+
+function selecionarFaixa(fx, cardEl) {
+  if (cardSelecionado) cardSelecionado.classList.remove('selecionada');
+  cardEl.classList.add('selecionada');
+  cardSelecionado = cardEl;
+
+  capaImg.src = fx.capa;
+  capaImg.alt = 'Capa da música "' + fx.titulo + '"';
+  trackTitulo.textContent = fx.titulo;
+  trackArtista.textContent = fx.artista;
+
+  audio.pause();
+  audio.src = fx.audio;
+  audio.load();
+  iconPlay.style.display = '';
+  iconPause.style.display = 'none';
+
+  letraWrap.innerHTML = '';
+  let estrofeEl = null;
+  let estrofeNum = null;
+  fx.letra.forEach((linha) => {
+    if (linha.estrofe !== estrofeNum) {
+      estrofeNum = linha.estrofe;
+      estrofeEl = document.createElement('div');
+      estrofeEl.className = 'estrofe' + (linha.refrao ? ' refrao' : '');
+      letraWrap.appendChild(estrofeEl);
+    }
+    const p = document.createElement('p');
+    p.textContent = linha.texto;
+    estrofeEl.appendChild(p);
+  });
+}
+
+FAIXAS.forEach((fx) => {
+  const lancado = fx.status === 'lancado';
+  const card = document.createElement('div');
+  card.className = 'faixa-card' + (lancado ? '' : ' locked');
+  card.innerHTML = `
+    <div class="faixa-cover">
+      <span class="status-badge ${lancado ? 'lancado' : 'embreve'}">${lancado ? '★ Lançado' : 'Em breve'}</span>
+      ${lancado
+        ? `<img src="${fx.capa}" alt="Capa de ${fx.titulo}">`
+        : `<svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="18" r="2.3"/><circle cx="17" cy="16" r="2.3"/><path d="M9.3 18V6.5L19.3 4.5V16"/></svg>`}
+      ${lancado ? '' : `<svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`}
+      ${lancado ? '' : `<div class="locked-tip"><div><strong>Estamos preparando...</strong>A próxima faixa já está a caminho. Aguarde! 👋</div></div>`}
+    </div>
+    <div class="faixa-body">
+      <div class="faixa-num">Faixa ${pad(fx.numero)}</div>
+      <h3>${fx.titulo}</h3>
+    </div>
+  `;
+  if (lancado) {
+    card.addEventListener('click', () => selecionarFaixa(fx, card));
+  } else {
+    card.addEventListener('click', () => {
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+      const tip = card.querySelector('.locked-tip');
+      tip.classList.add('show');
+      clearTimeout(card._tipTimer);
+      card._tipTimer = setTimeout(() => tip.classList.remove('show'), 2500);
+    });
+  }
+  faixasRow.appendChild(card);
+});
+
+const primeiraLancada = FAIXAS.find((fx) => fx.status === 'lancado');
+if (primeiraLancada) {
+  const idx = FAIXAS.indexOf(primeiraLancada);
+  selecionarFaixa(primeiraLancada, faixasRow.children[idx]);
+}
+
+function aoCarregarMetadados() {
+  tempoTotal.textContent = formatar(audio.duration);
+  seek.max = audio.duration;
+}
+audio.addEventListener('loadedmetadata', aoCarregarMetadados);
+
+audio.addEventListener('timeupdate', () => {
+  tempoAtual.textContent = formatar(audio.currentTime);
+  if (!seek.matches(':active')) seek.value = audio.currentTime;
+});
+
+audio.addEventListener('ended', () => {
+  iconPlay.style.display = '';
+  iconPause.style.display = 'none';
+});
+
+btnPlay.addEventListener('click', () => {
+  if (audio.paused) {
+    audio.play();
+    iconPlay.style.display = 'none';
+    iconPause.style.display = '';
+  } else {
+    audio.pause();
+    iconPlay.style.display = '';
+    iconPause.style.display = 'none';
+  }
+});
+
+seek.addEventListener('input', () => { audio.currentTime = seek.value; });
+document.getElementById('btnVoltar10').addEventListener('click', () => { audio.currentTime = Math.max(0, audio.currentTime - 10); });
+document.getElementById('btnAvancar10').addEventListener('click', () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); });
+</script>
+</body>
+</html>
