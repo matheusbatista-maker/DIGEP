@@ -42,7 +42,7 @@ const EDICOES_GIBI = [
     numero: 3,
     titulo: 'O Efeito Cascata',
     tagline: 'Ele nunca vai saber os nomes de quem fez isso acontecer.',
-    status: 'em_breve',
+    status: 'lancado',
     capa: 'gibi-assets/edicao-03-capa.png',
     pdf: null,
     paginas: 8,
