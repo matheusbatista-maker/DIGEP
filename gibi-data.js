@@ -32,7 +32,7 @@ const EDICOES_GIBI = [
     numero: 2,
     titulo: 'Portas Abertas',
     tagline: 'Nenhum gabinete move um Tribunal sozinho.',
-    status: 'lancado',
+    status: 'em_breve',
     capa: 'gibi-assets/edicao-02-capa.png',
     pdf: 'gibi-assets/edicao-02.pdf',
     paginas: 6,
