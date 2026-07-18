@@ -1258,7 +1258,8 @@ function computeG2Difficulty(score) {
 const G2_DIFFICULTIES = [
   'PLS', 'CNJ', 'SERVIDOR CHATO', 'DEMANDA EM EXCESSO', 'PRAZO ESTOURANDO',
   'PROCESSO PARADO', 'REUNIÃO ÀS 17H', 'META NÃO CUMPRIDA', 'E-MAIL NÃO RESPONDIDO',
-  'INSPEÇÃO SURPRESA', 'SISTEMA FORA DO AR', 'FÉRIAS NEGADAS'
+  'INSPEÇÃO SURPRESA', 'SISTEMA FORA DO AR', 'FÉRIAS NEGADAS',
+  'LICITAÇÃO TRAVADA', 'CAFÉ ACABOU', 'BLOCO SEM ASSINAR', 'CHAMADO AGUARDANDO'
 ];
 
 const g2 = {
@@ -1385,11 +1386,17 @@ function updateG2Anim() {
 }
 
 // sorteia a próxima dificuldade sem repetir a anterior
-function pickG2Difficulty() {
-  let idx;
-  do { idx = Math.floor(Math.random() * G2_DIFFICULTIES.length); } while (idx === g2.lastDiffIdx && G2_DIFFICULTIES.length > 1);
-  g2.lastDiffIdx = idx;
-  return G2_DIFFICULTIES[idx];
+// sorteia uma frase pra coluna de cima e outra pra de baixo do MESMO obstáculo —
+// nunca repete a mesma frase nas duas colunas, nem repete a última frase usada
+// (na coluna de baixo do obstáculo anterior) logo de cara.
+function pickG2DifficultyPair() {
+  const n = G2_DIFFICULTIES.length;
+  let idxTop;
+  do { idxTop = Math.floor(Math.random() * n); } while (idxTop === g2.lastDiffIdx && n > 1);
+  let idxBottom;
+  do { idxBottom = Math.floor(Math.random() * n); } while (idxBottom === idxTop && n > 1);
+  g2.lastDiffIdx = idxBottom;
+  return [G2_DIFFICULTIES[idxTop], G2_DIFFICULTIES[idxBottom]];
 }
 function spawnG2Pipe() {
   const diff = computeG2Difficulty(g2.score);
@@ -1400,7 +1407,8 @@ function spawnG2Pipe() {
   const gapSize = Math.max(GAP2_MIN, Math.min(GAP2, diff.gap + jitterAmt));
   const rangeMax = Math.max(MARGIN2, GROUND_Y - gapSize - MARGIN2);
   const gapTop = MARGIN2 + Math.random() * (rangeMax - MARGIN2);
-  g2.pipes.push({ x: W + PIPE_W, w: PIPE_W, gapTop, gapSize, scored: false, label: pickG2Difficulty() });
+  const [labelTop, labelBottom] = pickG2DifficultyPair();
+  g2.pipes.push({ x: W + PIPE_W, w: PIPE_W, gapTop, gapSize, scored: false, labelTop, labelBottom });
 }
 
 function updateGame2() {
@@ -1441,7 +1449,8 @@ function updateGame2() {
   else if (by0 + BIRD_H >= GROUND_Y) hitReason = 'CHÃO DO FÓRUM';
   for (const p of g2.pipes) {
     if (bx0 + BIRD_W > p.x && bx0 < p.x + p.w) {
-      if (by0 < p.gapTop || by0 + BIRD_H > p.gapTop + p.gapSize) hitReason = p.label;
+      if (by0 < p.gapTop) hitReason = p.labelTop;
+      else if (by0 + BIRD_H > p.gapTop + p.gapSize) hitReason = p.labelBottom;
     }
   }
   if (hitReason) {
@@ -1545,8 +1554,8 @@ function drawG2StackSegment(x, y, w, h, capAtBottom, label) {
 function drawG2Pipe(p) {
   const sx = p.x;
   if (sx + p.w < -10 || sx > W + 10) return;
-  drawG2StackSegment(sx, 0, p.w, p.gapTop, true, p.label);                                   // coluna pendurada do teto
-  drawG2StackSegment(sx, p.gapTop + p.gapSize, p.w, GROUND_Y - (p.gapTop + p.gapSize), false, p.label); // coluna erguida do chão
+  drawG2StackSegment(sx, 0, p.w, p.gapTop, true, p.labelTop);                                   // coluna pendurada do teto
+  drawG2StackSegment(sx, p.gapTop + p.gapSize, p.w, GROUND_Y - (p.gapTop + p.gapSize), false, p.labelBottom); // coluna erguida do chão
 }
 
 // arara-azul jogável: contorno preto, anel amarelo no olho, bico preto, asa animada
