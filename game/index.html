@@ -109,6 +109,14 @@
     background: #e8c343; padding: 5px 16px; border-radius: 999px; min-width: 18px; text-align: center;
   }
   .lbLoading { justify-content: center; color: #bbb; background: none; font-size: 14px; }
+  .lbPager { display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; }
+  .lbPageBtn {
+    cursor: pointer; background: #2a2a45; border: 2px solid #55558a; border-radius: 6px;
+    padding: 6px 14px; color: #fff; font-size: 12px; letter-spacing: 0.5px; font-family: inherit;
+  }
+  .lbPageBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .lbPageBtn:not(:disabled):active { background: #55558a; }
+  #leaderboardPageLabel { color: #9a9ac0; font-size: 12px; min-width: 110px; text-align: center; }
   #controls {
     display: flex; justify-content: space-between; align-items: center;
     width: 96vw; max-width: 640px;
@@ -161,6 +169,11 @@
           <span class="lbHScore">PONTOS</span>
         </div>
         <div id="leaderboardList" class="lbList"></div>
+        <div class="lbPager" id="leaderboardPager">
+          <button class="lbPageBtn" id="leaderboardPrevBtn">‹ Anterior</button>
+          <span id="leaderboardPageLabel">Página 1 de 1</span>
+          <button class="lbPageBtn" id="leaderboardNextBtn">Próxima ›</button>
+        </div>
         <div class="goBtn" id="leaderboardCloseBtn">FECHAR</div>
       </div>
     </div>
@@ -1283,6 +1296,10 @@ const nameEntryCancel = document.getElementById('nameEntryCancel');
 const leaderboardOverlay = document.getElementById('leaderboardOverlay');
 const leaderboardList = document.getElementById('leaderboardList');
 const leaderboardCloseBtn = document.getElementById('leaderboardCloseBtn');
+const leaderboardPager = document.getElementById('leaderboardPager');
+const leaderboardPrevBtn = document.getElementById('leaderboardPrevBtn');
+const leaderboardNextBtn = document.getElementById('leaderboardNextBtn');
+const leaderboardPageLabel = document.getElementById('leaderboardPageLabel');
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1333,42 +1350,71 @@ async function submitG2Score() {
 }
 
 const G2_MEDALS = ['🥇', '🥈', '🥉'];
+const G2_LB_PAGE_SIZE = 20;
+let g2LbPage = 1;
+let g2LbTotal = 0;
+
+function g2LbTotalPages() { return Math.max(1, Math.ceil(g2LbTotal / G2_LB_PAGE_SIZE)); }
+
+async function loadLeaderboardPage(page) {
+  leaderboardList.innerHTML = '<div class="lbRow lbLoading">Carregando...</div>';
+  leaderboardPager.style.visibility = 'hidden';
+  try {
+    const resp = await fetch(`/api/pontuacoes?page=${page}&pageSize=${G2_LB_PAGE_SIZE}`);
+    const data = await resp.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    g2LbPage = data.page || page;
+    g2LbTotal = data.total || 0;
+
+    if (items.length === 0) {
+      leaderboardList.innerHTML = g2LbPage === 1
+        ? '<div class="lbRow lbLoading">Ninguém voou ainda. Seja o primeiro!</div>'
+        : '<div class="lbRow lbLoading">Não tem mais pontuações aqui.</div>';
+    } else {
+      const baseRank = (g2LbPage - 1) * G2_LB_PAGE_SIZE;
+      leaderboardList.innerHTML = items.map((row, i) => {
+        const rank = baseRank + i + 1;
+        const ehGabdigep = String(row.unidade || '').trim().toUpperCase() === 'GABDIGEP';
+        // GABDIGEP não vale medalha (é a equipe que fez o jogo) -- mostra X no lugar,
+        // mas a linha continua contando normalmente na posição do ranking.
+        const posLabel = ehGabdigep ? '✗' : (G2_MEDALS[rank - 1] || (rank + 'º'));
+        const topClass = rank <= 3 ? ` lbTop${rank}` : '';
+        const unidadeHtml = escapeHtml(row.unidade || '') +
+          (ehGabdigep ? ' <span class="lbCheat">🍬 não vale, marmelada de dev!</span>' : '');
+        return `<div class="lbRow${topClass}">
+          <span class="lbPos">${posLabel}</span>
+          <span class="lbInfo">
+            <span class="lbName">${escapeHtml(row.nome)}</span>
+            <span class="lbUnidade">${unidadeHtml}</span>
+          </span>
+          <span class="lbScore">${escapeHtml(row.pontuacao)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    const totalPages = g2LbTotalPages();
+    leaderboardPageLabel.textContent = `Página ${g2LbPage} de ${totalPages}`;
+    leaderboardPrevBtn.disabled = g2LbPage <= 1;
+    leaderboardNextBtn.disabled = g2LbPage >= totalPages;
+    leaderboardPager.style.visibility = totalPages > 1 ? 'visible' : 'hidden';
+  } catch (e) {
+    leaderboardList.innerHTML = '<div class="lbRow lbLoading">Não consegui carregar o placar agora.</div>';
+    leaderboardPager.style.visibility = 'hidden';
+  }
+}
+
 async function showLeaderboard() {
   overlayActive = true;
   leaderboardOverlay.classList.add('show');
-  leaderboardList.innerHTML = '<div class="lbRow lbLoading">Carregando...</div>';
-  try {
-    const resp = await fetch('/api/pontuacoes');
-    const data = await resp.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      leaderboardList.innerHTML = '<div class="lbRow lbLoading">Ninguém voou ainda. Seja o primeiro!</div>';
-      return;
-    }
-    leaderboardList.innerHTML = data.map((row, i) => {
-      const rank = i + 1;
-      const posLabel = G2_MEDALS[i] || (rank + 'º');
-      const topClass = rank <= 3 ? ` lbTop${rank}` : '';
-      const ehGabdigep = String(row.unidade || '').trim().toUpperCase() === 'GABDIGEP';
-      const unidadeHtml = escapeHtml(row.unidade || '') +
-        (ehGabdigep ? ' <span class="lbCheat">🍬 não vale, marmelada de dev!</span>' : '');
-      return `<div class="lbRow${topClass}">
-        <span class="lbPos">${posLabel}</span>
-        <span class="lbInfo">
-          <span class="lbName">${escapeHtml(row.nome)}</span>
-          <span class="lbUnidade">${unidadeHtml}</span>
-        </span>
-        <span class="lbScore">${escapeHtml(row.pontuacao)}</span>
-      </div>`;
-    }).join('');
-  } catch (e) {
-    leaderboardList.innerHTML = '<div class="lbRow lbLoading">Não consegui carregar o placar agora.</div>';
-  }
+  await loadLeaderboardPage(1);
 }
 function hideLeaderboard() {
   leaderboardOverlay.classList.remove('show');
   overlayActive = false;
 }
 leaderboardCloseBtn.addEventListener('click', hideLeaderboard);
+leaderboardPrevBtn.addEventListener('click', () => { if (g2LbPage > 1) loadLeaderboardPage(g2LbPage - 1); });
+leaderboardNextBtn.addEventListener('click', () => { if (g2LbPage < g2LbTotalPages()) loadLeaderboardPage(g2LbPage + 1); });
 
 function initGame2() {
   g2.y = H / 2; g2.vy = 0; g2.rot = 0;

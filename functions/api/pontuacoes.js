@@ -1,15 +1,25 @@
 // API do placar do "Voo da Arara" — Cloudflare Pages Function + D1.
-// GET  /api/pontuacoes  -> top 10 pontuações
+// GET  /api/pontuacoes?page=1&pageSize=20  -> { items, page, pageSize, total }
 // POST /api/pontuacoes  -> { nome, unidade, pontuacao } grava uma nova pontuação
 
 const MAX_NOME = 20;
 const MAX_UNIDADE = 40;
 const MAX_PONTUACAO = 999999;
-const SELECT_TOP10 = 'SELECT nome, unidade, pontuacao FROM pontuacoes ORDER BY pontuacao DESC, criado_em ASC LIMIT 10';
+const MAX_PAGE_SIZE = 50;
+const SELECT_PAGE = 'SELECT nome, unidade, pontuacao FROM pontuacoes ORDER BY pontuacao DESC, criado_em ASC LIMIT ? OFFSET ?';
 
 export async function onRequestGet(context) {
-  const { results } = await context.env.DB.prepare(SELECT_TOP10).all();
-  return Response.json(results);
+  const url = new URL(context.request.url);
+  const page = Math.max(1, parseInt(url.searchParams.get('page'), 10) || 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(url.searchParams.get('pageSize'), 10) || 20));
+  const offset = (page - 1) * pageSize;
+
+  const [{ results: items }, totalRow] = await Promise.all([
+    context.env.DB.prepare(SELECT_PAGE).bind(pageSize, offset).all(),
+    context.env.DB.prepare('SELECT COUNT(*) AS total FROM pontuacoes').first()
+  ]);
+
+  return Response.json({ items, page, pageSize, total: totalRow.total });
 }
 
 export async function onRequestPost(context) {
@@ -38,6 +48,5 @@ export async function onRequestPost(context) {
     'INSERT INTO pontuacoes (nome, unidade, pontuacao) VALUES (?, ?, ?)'
   ).bind(nome, unidade, pontuacao).run();
 
-  const { results } = await context.env.DB.prepare(SELECT_TOP10).all();
-  return Response.json(results, { status: 201 });
+  return Response.json({ ok: true }, { status: 201 });
 }
