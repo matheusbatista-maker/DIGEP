@@ -65,12 +65,48 @@
   .gameOverlay .goLink {
     cursor: pointer; color: #888; font-size: 11px; text-decoration: underline;
   }
-  .lbList { display: flex; flex-direction: column; gap: 4px; width: 260px; max-width: 85%; max-height: 40vh; overflow-y: auto; }
-  .lbRow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; padding: 5px 9px; background: rgba(255,255,255,0.06); border-radius: 4px; }
-  .lbPos { color: #ffd24a; width: 26px; flex: none; text-align: left; }
-  .lbName { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .lbScore { color: #e8c343; font-weight: bold; flex: none; }
-  .lbLoading { justify-content: center; color: #bbb; }
+  .gameOverlay .goError { color: #ff6b6b; font-size: 10.5px; min-height: 12px; margin-top: -8px; }
+
+  /* ----- placar (painel opaco, tipo troféu — não é mais um overlay translúcido) ----- */
+  .lbOverlay { background: rgba(3,3,10,0.95); }
+  .lbPanel {
+    background: linear-gradient(180deg, #22223f, #12121f);
+    border: 3px solid #e8c343;
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px #6a561f, 0 12px 30px rgba(0,0,0,0.7);
+    padding: 16px 18px 18px;
+    width: 300px; max-width: 92%;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .lbHeader {
+    display: flex; width: 100%; padding: 0 9px 6px;
+    border-bottom: 2px solid rgba(232,195,67,0.35);
+    font-size: 9.5px; letter-spacing: 1px; color: #9a9ac0;
+  }
+  .lbHPos { width: 30px; flex: none; }
+  .lbHName { flex: 1; text-align: left; }
+  .lbHScore { flex: none; }
+  .lbList { display: flex; flex-direction: column; gap: 5px; width: 100%; max-height: 40vh; overflow-y: auto; }
+  .lbRow {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; padding: 7px 9px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+  }
+  .lbRow:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .lbRow.lbTop1 { background: rgba(255,210,74,0.18); border-left-color: #ffd24a; }
+  .lbRow.lbTop2 { background: rgba(201,201,216,0.14); border-left-color: #c9c9d8; }
+  .lbRow.lbTop3 { background: rgba(205,127,50,0.16); border-left-color: #cd7f32; }
+  .lbPos { width: 26px; flex: none; text-align: left; font-weight: bold; color: #ffd24a; font-size: 13px; }
+  .lbInfo { flex: 1; display: flex; flex-direction: column; overflow: hidden; text-align: left; }
+  .lbName { color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
+  .lbUnidade { color: #9a9ac0; font-size: 9.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lbScore {
+    flex: none; color: #0b0b1a; font-weight: bold; font-size: 13px;
+    background: #e8c343; padding: 3px 11px; border-radius: 999px; min-width: 14px; text-align: center;
+  }
+  .lbLoading { justify-content: center; color: #bbb; background: none; }
   #controls {
     display: flex; justify-content: space-between; align-items: center;
     width: 96vw; max-width: 640px;
@@ -108,14 +144,23 @@
     <div id="nameEntryOverlay" class="gameOverlay">
       <h2>QUEM ESTÁ VOANDO?</h2>
       <input id="nameEntryInput" maxlength="20" placeholder="Seu nome" autocomplete="off">
+      <input id="nameEntryUnidade" maxlength="40" placeholder="Sua unidade/setor" autocomplete="off">
+      <div class="goError" id="nameEntryError"></div>
       <div class="goBtn" id="nameEntryBtn">VOAR</div>
       <div class="goLink" id="nameEntryCancel">‹ voltar ao menu</div>
     </div>
 
-    <div id="leaderboardOverlay" class="gameOverlay">
-      <h2>MELHORES VOOS</h2>
-      <div id="leaderboardList" class="lbList"></div>
-      <div class="goBtn" id="leaderboardCloseBtn">FECHAR</div>
+    <div id="leaderboardOverlay" class="gameOverlay lbOverlay">
+      <div class="lbPanel">
+        <h2>🏆 MELHORES VOOS</h2>
+        <div class="lbHeader">
+          <span class="lbHPos">#</span>
+          <span class="lbHName">JOGADOR</span>
+          <span class="lbHScore">PONTOS</span>
+        </div>
+        <div id="leaderboardList" class="lbList"></div>
+        <div class="goBtn" id="leaderboardCloseBtn">FECHAR</div>
+      </div>
     </div>
   </div>
   <div class="hint">Setas/WASD: mover e pular | Z: atirar | E: Modo Diretora (Paula) | ESC: menu</div>
@@ -1171,24 +1216,35 @@ const G2_BG_SCROLL = 1.6;             // drift do cenário na tela inicial
 // dificuldade em duas fases: rampa suave até a pontuação 13 (dá tempo de ler as
 // placas), depois uma rampa mais acentuada que intensifica de verdade até um teto
 const G2_RAMP_BREAKPOINT = 13;
-const PIPE_SPEED_BASE = 1.3, PIPE_SPEED_MID = 2.4, PIPE_SPEED_MAX = 4.2;
-const PIPE_SPACING_BASE = 175, PIPE_SPACING_MID = 135, PIPE_SPACING_MIN = 100;
+const G2_HARD_BREAKPOINT = 100;  // a partir daqui, uma 3ª rampa mais dura entra em ação
+const PIPE_SPEED_BASE = 1.3, PIPE_SPEED_MID = 2.4, PIPE_SPEED_MAX = 4.2, PIPE_SPEED_HARD_MAX = 5.6;
+const PIPE_SPACING_BASE = 175, PIPE_SPACING_MID = 135, PIPE_SPACING_MIN = 100, PIPE_SPACING_HARD_MIN = 78;
 const PIPE_SPEED_RAMP1 = (PIPE_SPEED_MID - PIPE_SPEED_BASE) / G2_RAMP_BREAKPOINT;
 const PIPE_SPEED_RAMP2 = 0.14;
+const PIPE_SPEED_RAMP3 = 0.05;
 const PIPE_SPACING_RAMP1 = (PIPE_SPACING_BASE - PIPE_SPACING_MID) / G2_RAMP_BREAKPOINT;
 const PIPE_SPACING_RAMP2 = 2.6;
+const PIPE_SPACING_RAMP3 = 0.9;
 
 function computeG2Difficulty(score) {
   let speed, spacing;
   if (score <= G2_RAMP_BREAKPOINT) {
     speed = PIPE_SPEED_BASE + score * PIPE_SPEED_RAMP1;
     spacing = PIPE_SPACING_BASE - score * PIPE_SPACING_RAMP1;
-  } else {
+    return { speed: Math.min(PIPE_SPEED_MAX, speed), spacing: Math.max(PIPE_SPACING_MIN, spacing) };
+  }
+  if (score <= G2_HARD_BREAKPOINT) {
     const extra = score - G2_RAMP_BREAKPOINT;
     speed = PIPE_SPEED_MID + extra * PIPE_SPEED_RAMP2;
     spacing = PIPE_SPACING_MID - extra * PIPE_SPACING_RAMP2;
+    return { speed: Math.min(PIPE_SPEED_MAX, speed), spacing: Math.max(PIPE_SPACING_MIN, spacing) };
   }
-  return { speed: Math.min(PIPE_SPEED_MAX, speed), spacing: Math.max(PIPE_SPACING_MIN, spacing) };
+  // além de 100 pontos: a rampa 2 já estava toda saturada no teto anterior (~score 27) —
+  // essa 3ª rampa reabre margem pra continuar ficando mais difícil pra quem passa dos 100.
+  const extraHard = score - G2_HARD_BREAKPOINT;
+  speed = PIPE_SPEED_MAX + extraHard * PIPE_SPEED_RAMP3;
+  spacing = PIPE_SPACING_MIN - extraHard * PIPE_SPACING_RAMP3;
+  return { speed: Math.min(PIPE_SPEED_HARD_MAX, speed), spacing: Math.max(PIPE_SPACING_HARD_MIN, spacing) };
 }
 
 const G2_DIFFICULTIES = [
@@ -1204,12 +1260,15 @@ const g2 = {
 };
 let g2Best = 0;   // recorde da sessão (sem localStorage, só em memória)
 
-/* ----- placar online (nome do jogador + leaderboard via /api/pontuacoes) ----- */
+/* ----- placar online (nome + unidade do jogador + leaderboard via /api/pontuacoes) ----- */
 let playerName = '';
+let playerUnidade = '';
 let overlayActive = false;
 
 const nameEntryOverlay = document.getElementById('nameEntryOverlay');
 const nameEntryInput = document.getElementById('nameEntryInput');
+const nameEntryUnidadeInput = document.getElementById('nameEntryUnidade');
+const nameEntryError = document.getElementById('nameEntryError');
 const nameEntryBtn = document.getElementById('nameEntryBtn');
 const nameEntryCancel = document.getElementById('nameEntryCancel');
 const leaderboardOverlay = document.getElementById('leaderboardOverlay');
@@ -1225,12 +1284,17 @@ function showNameEntry() {
   overlayActive = true;
   nameEntryOverlay.classList.add('show');
   nameEntryInput.value = playerName;
+  nameEntryUnidadeInput.value = playerUnidade;
+  nameEntryError.textContent = '';
   setTimeout(() => nameEntryInput.focus(), 50);
 }
 function confirmNameEntry() {
-  const val = nameEntryInput.value.trim().slice(0, 20);
-  if (!val) { nameEntryInput.focus(); return; }
-  playerName = val;
+  const nome = nameEntryInput.value.trim().slice(0, 20);
+  const unidade = nameEntryUnidadeInput.value.trim().slice(0, 40);
+  if (!nome) { nameEntryError.textContent = 'Digite seu nome.'; nameEntryInput.focus(); return; }
+  if (!unidade) { nameEntryError.textContent = 'Informe sua unidade/setor.'; nameEntryUnidadeInput.focus(); return; }
+  playerName = nome;
+  playerUnidade = unidade;
   nameEntryOverlay.classList.remove('show');
   overlayActive = false;
   startGame2Intro();
@@ -1242,21 +1306,24 @@ function cancelNameEntry() {
 }
 nameEntryBtn.addEventListener('click', confirmNameEntry);
 nameEntryCancel.addEventListener('click', cancelNameEntry);
-nameEntryInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); confirmNameEntry(); }
-});
+for (const el of [nameEntryInput, nameEntryUnidadeInput]) {
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); confirmNameEntry(); }
+  });
+}
 
 async function submitG2Score() {
-  if (!playerName) return;
+  if (!playerName || !playerUnidade) return;
   try {
     await fetch('/api/pontuacoes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: playerName, pontuacao: g2.score })
+      body: JSON.stringify({ nome: playerName, unidade: playerUnidade, pontuacao: g2.score })
     });
   } catch (e) { /* sem internet ou API fora do ar — não trava o jogo */ }
 }
 
+const G2_MEDALS = ['🥇', '🥈', '🥉'];
 async function showLeaderboard() {
   overlayActive = true;
   leaderboardOverlay.classList.add('show');
@@ -1268,9 +1335,19 @@ async function showLeaderboard() {
       leaderboardList.innerHTML = '<div class="lbRow lbLoading">Ninguém voou ainda. Seja o primeiro!</div>';
       return;
     }
-    leaderboardList.innerHTML = data.map((row, i) =>
-      `<div class="lbRow"><span class="lbPos">${i + 1}º</span><span class="lbName">${escapeHtml(row.nome)}</span><span class="lbScore">${escapeHtml(row.pontuacao)}</span></div>`
-    ).join('');
+    leaderboardList.innerHTML = data.map((row, i) => {
+      const rank = i + 1;
+      const posLabel = G2_MEDALS[i] || (rank + 'º');
+      const topClass = rank <= 3 ? ` lbTop${rank}` : '';
+      return `<div class="lbRow${topClass}">
+        <span class="lbPos">${posLabel}</span>
+        <span class="lbInfo">
+          <span class="lbName">${escapeHtml(row.nome)}</span>
+          <span class="lbUnidade">${escapeHtml(row.unidade || '')}</span>
+        </span>
+        <span class="lbScore">${escapeHtml(row.pontuacao)}</span>
+      </div>`;
+    }).join('');
   } catch (e) {
     leaderboardList.innerHTML = '<div class="lbRow lbLoading">Não consegui carregar o placar agora.</div>';
   }

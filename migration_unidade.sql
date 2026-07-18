@@ -1,0 +1,1 @@
+ALTER TABLE pontuacoes ADD COLUMN unidade TEXT NOT NULL DEFAULT '';
