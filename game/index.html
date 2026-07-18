@@ -1173,6 +1173,10 @@ function getGameCardLayout() {
     { x: x0 + cardW + gap, y: 70, w: cardW, h: cardH }
   ];
 }
+function getLeaderboardLinkRect() {
+  const c1 = getGameCardLayout()[1];
+  return { x: c1.x, y: c1.y + c1.h + 6, w: c1.w, h: 18 };
+}
 function hitTestGames(pt) {
   if (!pt) return -1;
   const cards = getGameCardLayout();
@@ -1632,12 +1636,17 @@ function update() {
         if (keys.left) { gameSelectHighlight = 0; selectCooldown = 12; }
         else if (keys.right) { gameSelectHighlight = 1; selectCooldown = 12; }
       }
-      let chosen = -1;
-      const clickedCard = hitTestGames(clickPoint);
-      if (clickedCard >= 0) { gameSelectHighlight = clickedCard; chosen = clickedCard; }
-      else if (confirm) chosen = gameSelectHighlight;
-      if (chosen === 0) { gameState = STATE.CHAR_SELECT; stateTimer = 0; }
-      else if (chosen === 1) { if (playerName) startGame2Intro(); else showNameEntry(); }
+      const lbRect = getLeaderboardLinkRect();
+      if (pointInRect(clickPoint, lbRect.x, lbRect.y, lbRect.w, lbRect.h)) {
+        showLeaderboard();
+      } else {
+        let chosen = -1;
+        const clickedCard = hitTestGames(clickPoint);
+        if (clickedCard >= 0) { gameSelectHighlight = clickedCard; chosen = clickedCard; }
+        else if (confirm) chosen = gameSelectHighlight;
+        if (chosen === 0) { gameState = STATE.CHAR_SELECT; stateTimer = 0; }
+        else if (chosen === 1) { if (playerName) startGame2Intro(); else showNameEntry(); }
+      }
     }
   } else if (gameState === STATE.CHAR_SELECT) {
     if (keysPressedThisFrame.esc) { goToGameSelect(); }
@@ -2412,6 +2421,9 @@ function drawGameSelectScreen() {
   pixText('VOO DA ARARA', c1.x + c1.w / 2, c1.y + 66, '#fff', 7);
   pixText('Desvie das', c1.x + c1.w / 2, c1.y + 78, '#fff', 7);
   pixText('dificuldades', c1.x + c1.w / 2, c1.y + 90, '#fff', 7);
+
+  const lbRect = getLeaderboardLinkRect();
+  drawButton(lbRect.x, lbRect.y, lbRect.w, lbRect.h, 'VER PLACAR');
 
   pixText('Setas p/ escolher · Enter/clique confirma · ESC volta', W / 2, H - 14, '#888', 6);
 }
