@@ -322,7 +322,7 @@ footer strong { color: var(--gold); }
 .page-head .eyebrow { margin-bottom: 10px; }
 .page-head h1 { font-size: clamp(30px, 5vw, 44px); color: var(--cream); }
 .page-head h1 .accent { color: var(--gold); }
-.page-head p { color: var(--muted); max-width: 640px; margin-top: 12px; }
+.page-head p { color: var(--muted); margin-top: 12px; }
 
 /* ----- GIBI: grid de edições ----- */
 .editions {
