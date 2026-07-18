@@ -45,7 +45,7 @@ const EDICOES_GIBI = [
     status: 'lancado',
     capa: 'gibi-assets/edicao-03-capa.png',
     pdf: null,
-    paginas: 9,
+    paginas: 8,
     pastaPaginas: 'gibi-assets/edicao-03-paginas'
   }
 ];
