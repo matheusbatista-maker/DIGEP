@@ -74,39 +74,41 @@
     border: 3px solid #e8c343;
     border-radius: 12px;
     box-shadow: 0 0 0 1px #6a561f, 0 12px 30px rgba(0,0,0,0.7);
-    padding: 16px 18px 18px;
-    width: 300px; max-width: 92%;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 18px 22px 20px;
+    width: 96%; height: 94%; max-width: 96%;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
   }
+  .lbPanel h2 { font-size: 19px; }
   .lbHeader {
-    display: flex; width: 100%; padding: 0 9px 6px;
+    display: flex; width: 100%; padding: 0 12px 8px;
     border-bottom: 2px solid rgba(232,195,67,0.35);
-    font-size: 9.5px; letter-spacing: 1px; color: #9a9ac0;
+    font-size: 11px; letter-spacing: 1.5px; color: #9a9ac0;
   }
-  .lbHPos { width: 30px; flex: none; }
+  .lbHPos { width: 40px; flex: none; }
   .lbHName { flex: 1; text-align: left; }
   .lbHScore { flex: none; }
-  .lbList { display: flex; flex-direction: column; gap: 5px; width: 100%; max-height: 40vh; overflow-y: auto; }
+  .lbList { display: flex; flex-direction: column; gap: 7px; width: 100%; flex: 1; overflow-y: auto; }
   .lbRow {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; padding: 7px 9px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 15px; padding: 10px 12px;
     background: rgba(255,255,255,0.05);
-    border-radius: 6px;
-    border-left: 3px solid transparent;
+    border-radius: 8px;
+    border-left: 4px solid transparent;
   }
   .lbRow:nth-child(even) { background: rgba(255,255,255,0.02); }
   .lbRow.lbTop1 { background: rgba(255,210,74,0.18); border-left-color: #ffd24a; }
   .lbRow.lbTop2 { background: rgba(201,201,216,0.14); border-left-color: #c9c9d8; }
   .lbRow.lbTop3 { background: rgba(205,127,50,0.16); border-left-color: #cd7f32; }
-  .lbPos { width: 26px; flex: none; text-align: left; font-weight: bold; color: #ffd24a; font-size: 13px; }
-  .lbInfo { flex: 1; display: flex; flex-direction: column; overflow: hidden; text-align: left; }
-  .lbName { color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
-  .lbUnidade { color: #9a9ac0; font-size: 9.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lbPos { width: 40px; flex: none; text-align: left; font-weight: bold; color: #ffd24a; font-size: 20px; }
+  .lbInfo { flex: 1; display: flex; flex-direction: column; overflow: hidden; text-align: left; gap: 1px; }
+  .lbName { color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; font-size: 16px; }
+  .lbUnidade { color: #9a9ac0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lbCheat { color: #ff8a5c; font-style: italic; }
   .lbScore {
-    flex: none; color: #0b0b1a; font-weight: bold; font-size: 13px;
-    background: #e8c343; padding: 3px 11px; border-radius: 999px; min-width: 14px; text-align: center;
+    flex: none; color: #0b0b1a; font-weight: bold; font-size: 17px;
+    background: #e8c343; padding: 5px 16px; border-radius: 999px; min-width: 18px; text-align: center;
   }
-  .lbLoading { justify-content: center; color: #bbb; background: none; }
+  .lbLoading { justify-content: center; color: #bbb; background: none; font-size: 14px; }
   #controls {
     display: flex; justify-content: space-between; align-items: center;
     width: 96vw; max-width: 640px;
@@ -1206,45 +1208,47 @@ function updateConfetti() {
    ========================================================================= */
 const GRAVITY2 = 0.3;           // gravidade por frame (suave)
 const FLAP_VY = -5.4;           // impulso do voo (substitui a velocidade, não soma)
-const GAP2 = 130;               // vão fixo entre coluna de cima e de baixo
+const GAP2 = 130;               // vão inicial (fase 0-50) entre coluna de cima e de baixo
+const GAP2_MIN = 58;            // vão mínimo absoluto — sempre voável mesmo no teto de dificuldade
 const PIPE_W = 34;              // largura de cada coluna de obstáculo
 const MARGIN2 = 22;             // margem mínima do vão até o teto/chão (espaço p/ a placa caber dentro do hitbox)
 const BIRD_X = Math.round(W * 0.25);  // a arara fica fixa na horizontal
 const BIRD_W = 16, BIRD_H = 12;       // hitbox (menor que o sprite — mais generosa)
 const G2_BG_SCROLL = 1.6;             // drift do cenário na tela inicial
 
-// dificuldade em duas fases: rampa suave até a pontuação 13 (dá tempo de ler as
-// placas), depois uma rampa mais acentuada que intensifica de verdade até um teto
-const G2_RAMP_BREAKPOINT = 13;
-const G2_HARD_BREAKPOINT = 100;  // a partir daqui, uma 3ª rampa mais dura entra em ação
-const PIPE_SPEED_BASE = 1.3, PIPE_SPEED_MID = 2.4, PIPE_SPEED_MAX = 4.2, PIPE_SPEED_HARD_MAX = 5.6;
-const PIPE_SPACING_BASE = 175, PIPE_SPACING_MID = 135, PIPE_SPACING_MIN = 100, PIPE_SPACING_HARD_MIN = 78;
-const PIPE_SPEED_RAMP1 = (PIPE_SPEED_MID - PIPE_SPEED_BASE) / G2_RAMP_BREAKPOINT;
-const PIPE_SPEED_RAMP2 = 0.14;
-const PIPE_SPEED_RAMP3 = 0.05;
-const PIPE_SPACING_RAMP1 = (PIPE_SPACING_BASE - PIPE_SPACING_MID) / G2_RAMP_BREAKPOINT;
-const PIPE_SPACING_RAMP2 = 2.6;
-const PIPE_SPACING_RAMP3 = 0.9;
+const PIPE_SPEED_BASE = 1.3, PIPE_SPACING_BASE = 175;
+
+// dificuldade por marcos de pontuação (interpolação linear entre pontos vizinhos):
+//   0-13   rampa suave (dá tempo de ler as placas)
+//   13-50  como já era antes (só um pouco mais rápido)
+//   50-100 e 100-150 continuam ficando mais rápido/apertado — antes ficava "parado"
+//          nessa faixa porque batia num teto cedo demais
+//   150+   segue subindo até um teto final bem mais alto, pra sempre sobrar desafio
+const G2_DIFFICULTY_POINTS = [
+  { score: 0,   speed: PIPE_SPEED_BASE, spacing: PIPE_SPACING_BASE, gap: GAP2, jitter: 0 },
+  { score: 13,  speed: 2.4,             spacing: 135,               gap: GAP2, jitter: 0 },
+  { score: 50,  speed: 3.4,             spacing: 115,               gap: GAP2, jitter: 0 },
+  { score: 100, speed: 4.5,             spacing: 95,                gap: 95,   jitter: 16 },
+  { score: 150, speed: 5.6,             spacing: 78,                gap: 75,   jitter: 20 },
+  { score: 250, speed: 6.6,             spacing: 62,                gap: GAP2_MIN, jitter: 24 }
+];
+
+function lerpG2(a, b, key, t) { return a[key] + (b[key] - a[key]) * t; }
 
 function computeG2Difficulty(score) {
-  let speed, spacing;
-  if (score <= G2_RAMP_BREAKPOINT) {
-    speed = PIPE_SPEED_BASE + score * PIPE_SPEED_RAMP1;
-    spacing = PIPE_SPACING_BASE - score * PIPE_SPACING_RAMP1;
-    return { speed: Math.min(PIPE_SPEED_MAX, speed), spacing: Math.max(PIPE_SPACING_MIN, spacing) };
+  const pts = G2_DIFFICULTY_POINTS;
+  if (score <= pts[0].score) return pts[0];
+  for (let i = 1; i < pts.length; i++) {
+    if (score <= pts[i].score) {
+      const a = pts[i - 1], b = pts[i];
+      const t = (score - a.score) / (b.score - a.score);
+      return {
+        speed: lerpG2(a, b, 'speed', t), spacing: lerpG2(a, b, 'spacing', t),
+        gap: lerpG2(a, b, 'gap', t), jitter: lerpG2(a, b, 'jitter', t)
+      };
+    }
   }
-  if (score <= G2_HARD_BREAKPOINT) {
-    const extra = score - G2_RAMP_BREAKPOINT;
-    speed = PIPE_SPEED_MID + extra * PIPE_SPEED_RAMP2;
-    spacing = PIPE_SPACING_MID - extra * PIPE_SPACING_RAMP2;
-    return { speed: Math.min(PIPE_SPEED_MAX, speed), spacing: Math.max(PIPE_SPACING_MIN, spacing) };
-  }
-  // além de 100 pontos: a rampa 2 já estava toda saturada no teto anterior (~score 27) —
-  // essa 3ª rampa reabre margem pra continuar ficando mais difícil pra quem passa dos 100.
-  const extraHard = score - G2_HARD_BREAKPOINT;
-  speed = PIPE_SPEED_MAX + extraHard * PIPE_SPEED_RAMP3;
-  spacing = PIPE_SPACING_MIN - extraHard * PIPE_SPACING_RAMP3;
-  return { speed: Math.min(PIPE_SPEED_HARD_MAX, speed), spacing: Math.max(PIPE_SPACING_HARD_MIN, spacing) };
+  return pts[pts.length - 1];
 }
 
 const G2_DIFFICULTIES = [
@@ -1339,11 +1343,14 @@ async function showLeaderboard() {
       const rank = i + 1;
       const posLabel = G2_MEDALS[i] || (rank + 'º');
       const topClass = rank <= 3 ? ` lbTop${rank}` : '';
+      const ehGabdigep = String(row.unidade || '').trim().toUpperCase() === 'GABDIGEP';
+      const unidadeHtml = escapeHtml(row.unidade || '') +
+        (ehGabdigep ? ' <span class="lbCheat">🍬 não vale, marmelada de dev!</span>' : '');
       return `<div class="lbRow${topClass}">
         <span class="lbPos">${posLabel}</span>
         <span class="lbInfo">
           <span class="lbName">${escapeHtml(row.nome)}</span>
-          <span class="lbUnidade">${escapeHtml(row.unidade || '')}</span>
+          <span class="lbUnidade">${unidadeHtml}</span>
         </span>
         <span class="lbScore">${escapeHtml(row.pontuacao)}</span>
       </div>`;
@@ -1381,8 +1388,15 @@ function pickG2Difficulty() {
   return G2_DIFFICULTIES[idx];
 }
 function spawnG2Pipe() {
-  const gapTop = MARGIN2 + Math.random() * (GROUND_Y - GAP2 - MARGIN2 * 2);
-  g2.pipes.push({ x: W + PIPE_W, w: PIPE_W, gapTop, scored: false, label: pickG2Difficulty() });
+  const diff = computeG2Difficulty(g2.score);
+  // o vão varia de tamanho (jitter) além de mudar de posição — evita que o padrão
+  // fique previsível e, com o vão menor, a faixa de posições possíveis se abre mais,
+  // obrigando a arara a buscar o topo ou o fundo da tela, não só o meio.
+  const jitterAmt = diff.jitter ? (Math.random() * 2 - 1) * diff.jitter : 0;
+  const gapSize = Math.max(GAP2_MIN, Math.min(GAP2, diff.gap + jitterAmt));
+  const rangeMax = Math.max(MARGIN2, GROUND_Y - gapSize - MARGIN2);
+  const gapTop = MARGIN2 + Math.random() * (rangeMax - MARGIN2);
+  g2.pipes.push({ x: W + PIPE_W, w: PIPE_W, gapTop, gapSize, scored: false, label: pickG2Difficulty() });
 }
 
 function updateGame2() {
@@ -1400,7 +1414,7 @@ function updateGame2() {
   g2.y += g2.vy;
   g2.rot = Math.max(-0.32, Math.min(1.2, g2.vy * 0.1));
 
-  // rampa de dificuldade em duas fases (ver computeG2Difficulty)
+  // dificuldade por marcos de pontuação (ver computeG2Difficulty)
   const diff = computeG2Difficulty(g2.score);
   g2.speed = diff.speed;
   g2.spacing = diff.spacing;
@@ -1423,7 +1437,7 @@ function updateGame2() {
   else if (by0 + BIRD_H >= GROUND_Y) hitReason = 'CHÃO DO FÓRUM';
   for (const p of g2.pipes) {
     if (bx0 + BIRD_W > p.x && bx0 < p.x + p.w) {
-      if (by0 < p.gapTop || by0 + BIRD_H > p.gapTop + GAP2) hitReason = p.label;
+      if (by0 < p.gapTop || by0 + BIRD_H > p.gapTop + p.gapSize) hitReason = p.label;
     }
   }
   if (hitReason) {
@@ -1528,7 +1542,7 @@ function drawG2Pipe(p) {
   const sx = p.x;
   if (sx + p.w < -10 || sx > W + 10) return;
   drawG2StackSegment(sx, 0, p.w, p.gapTop, true, p.label);                                   // coluna pendurada do teto
-  drawG2StackSegment(sx, p.gapTop + GAP2, p.w, GROUND_Y - (p.gapTop + GAP2), false, p.label); // coluna erguida do chão
+  drawG2StackSegment(sx, p.gapTop + p.gapSize, p.w, GROUND_Y - (p.gapTop + p.gapSize), false, p.label); // coluna erguida do chão
 }
 
 // arara-azul jogável: contorno preto, anel amarelo no olho, bico preto, asa animada
