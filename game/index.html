@@ -24,6 +24,11 @@
     font-size: 14px; letter-spacing: 2px; color: #ffd24a; text-shadow: 2px 2px #7a1f1f;
     text-align: center;
   }
+  #canvasWrap {
+    position: relative;
+    width: min(98vw, 150vh);
+    aspect-ratio: 400 / 240;
+  }
   #gameCanvas {
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
@@ -33,9 +38,39 @@
     box-shadow: 0 0 0 4px #16162a, 0 8px 24px rgba(0,0,0,0.6);
     /* Escala para CIMA até preencher a tela (mantendo a proporção 400:240 = 5:3) —
        max-width/max-height sozinhos só limitam, nunca ampliam além do tamanho nativo. */
-    width: min(98vw, 150vh);
-    height: auto;
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
   }
+  .gameOverlay {
+    position: absolute; inset: 4px;
+    display: none;
+    align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+    background: rgba(5,5,15,0.86);
+    text-align: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .gameOverlay.show { display: flex; }
+  .gameOverlay h2 { color: #ffd24a; font-size: 15px; letter-spacing: 1px; margin: 0; text-shadow: 2px 2px #7a1f1f; }
+  .gameOverlay input {
+    font-family: 'Courier New', monospace; font-size: 16px; padding: 10px 14px;
+    border-radius: 6px; border: 2px solid #e8c343; background: #1a1a2e; color: #fff;
+    text-align: center; width: 220px; max-width: 80%;
+  }
+  .gameOverlay .goBtn {
+    cursor: pointer; background: #2a2a45; border: 2px solid #e8c343; border-radius: 8px;
+    padding: 10px 28px; color: #fff; font-size: 13px; letter-spacing: 1px;
+  }
+  .gameOverlay .goBtn:active { background: #55558a; }
+  .gameOverlay .goLink {
+    cursor: pointer; color: #888; font-size: 11px; text-decoration: underline;
+  }
+  .lbList { display: flex; flex-direction: column; gap: 4px; width: 260px; max-width: 85%; max-height: 40vh; overflow-y: auto; }
+  .lbRow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; padding: 5px 9px; background: rgba(255,255,255,0.06); border-radius: 4px; }
+  .lbPos { color: #ffd24a; width: 26px; flex: none; text-align: left; }
+  .lbName { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lbScore { color: #e8c343; font-weight: bold; flex: none; }
+  .lbLoading { justify-content: center; color: #bbb; }
   #controls {
     display: flex; justify-content: space-between; align-items: center;
     width: 96vw; max-width: 640px;
@@ -67,7 +102,22 @@
 <body>
 <div id="wrap">
   <div id="title">DIGEP POR DENTRO</div>
-  <canvas id="gameCanvas" width="800" height="480"></canvas>
+  <div id="canvasWrap">
+    <canvas id="gameCanvas" width="800" height="480"></canvas>
+
+    <div id="nameEntryOverlay" class="gameOverlay">
+      <h2>QUEM ESTÁ VOANDO?</h2>
+      <input id="nameEntryInput" maxlength="20" placeholder="Seu nome" autocomplete="off">
+      <div class="goBtn" id="nameEntryBtn">VOAR</div>
+      <div class="goLink" id="nameEntryCancel">‹ voltar ao menu</div>
+    </div>
+
+    <div id="leaderboardOverlay" class="gameOverlay">
+      <h2>MELHORES VOOS</h2>
+      <div id="leaderboardList" class="lbList"></div>
+      <div class="goBtn" id="leaderboardCloseBtn">FECHAR</div>
+    </div>
+  </div>
   <div class="hint">Setas/WASD: mover e pular | Z: atirar | E: Modo Diretora (Paula) | ESC: menu</div>
   <div id="controls">
     <div class="padGroup">
@@ -115,6 +165,7 @@ const keys = { left: false, right: false, up: false, attack: false, power: false
 const keysPressedThisFrame = { up: false, attack: false, power: false, esc: false, enter: false, any: false };
 
 window.addEventListener('keydown', (e) => {
+  if (e.target && e.target.tagName === 'INPUT') return; // deixa o campo de nome digitar normalmente
   ensureAudio();
   keysPressedThisFrame.any = true;
   if (matchKey(e.key, 'left')) keys.left = true;
@@ -639,7 +690,7 @@ function respawnPlayer(atX) {
 const STATE = {
   TITLE: 'title', GAME_SELECT: 'game_select', CHAR_SELECT: 'char_select', INTRO: 'intro',
   PLAYING: 'playing', STAGE_CLEAR: 'stage_clear', GAME_OVER: 'game_over', VICTORY: 'victory',
-  G2_INTRO: 'g2_intro', G2_PLAYING: 'g2_playing', G2_OVER: 'g2_over'
+  G2_INTRO: 'g2_intro', G2_PLAYING: 'g2_playing', G2_OVER: 'g2_over', G2_NAME_ENTRY: 'g2_name_entry'
 };
 let gameState = STATE.TITLE;
 let level = buildLevel();
@@ -1153,6 +1204,83 @@ const g2 = {
 };
 let g2Best = 0;   // recorde da sessão (sem localStorage, só em memória)
 
+/* ----- placar online (nome do jogador + leaderboard via /api/pontuacoes) ----- */
+let playerName = '';
+let overlayActive = false;
+
+const nameEntryOverlay = document.getElementById('nameEntryOverlay');
+const nameEntryInput = document.getElementById('nameEntryInput');
+const nameEntryBtn = document.getElementById('nameEntryBtn');
+const nameEntryCancel = document.getElementById('nameEntryCancel');
+const leaderboardOverlay = document.getElementById('leaderboardOverlay');
+const leaderboardList = document.getElementById('leaderboardList');
+const leaderboardCloseBtn = document.getElementById('leaderboardCloseBtn');
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function showNameEntry() {
+  gameState = STATE.G2_NAME_ENTRY; stateTimer = 0;
+  overlayActive = true;
+  nameEntryOverlay.classList.add('show');
+  nameEntryInput.value = playerName;
+  setTimeout(() => nameEntryInput.focus(), 50);
+}
+function confirmNameEntry() {
+  const val = nameEntryInput.value.trim().slice(0, 20);
+  if (!val) { nameEntryInput.focus(); return; }
+  playerName = val;
+  nameEntryOverlay.classList.remove('show');
+  overlayActive = false;
+  startGame2Intro();
+}
+function cancelNameEntry() {
+  nameEntryOverlay.classList.remove('show');
+  overlayActive = false;
+  goToGameSelect();
+}
+nameEntryBtn.addEventListener('click', confirmNameEntry);
+nameEntryCancel.addEventListener('click', cancelNameEntry);
+nameEntryInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); confirmNameEntry(); }
+});
+
+async function submitG2Score() {
+  if (!playerName) return;
+  try {
+    await fetch('/api/pontuacoes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome: playerName, pontuacao: g2.score })
+    });
+  } catch (e) { /* sem internet ou API fora do ar — não trava o jogo */ }
+}
+
+async function showLeaderboard() {
+  overlayActive = true;
+  leaderboardOverlay.classList.add('show');
+  leaderboardList.innerHTML = '<div class="lbRow lbLoading">Carregando...</div>';
+  try {
+    const resp = await fetch('/api/pontuacoes');
+    const data = await resp.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      leaderboardList.innerHTML = '<div class="lbRow lbLoading">Ninguém voou ainda. Seja o primeiro!</div>';
+      return;
+    }
+    leaderboardList.innerHTML = data.map((row, i) =>
+      `<div class="lbRow"><span class="lbPos">${i + 1}º</span><span class="lbName">${escapeHtml(row.nome)}</span><span class="lbScore">${escapeHtml(row.pontuacao)}</span></div>`
+    ).join('');
+  } catch (e) {
+    leaderboardList.innerHTML = '<div class="lbRow lbLoading">Não consegui carregar o placar agora.</div>';
+  }
+}
+function hideLeaderboard() {
+  leaderboardOverlay.classList.remove('show');
+  overlayActive = false;
+}
+leaderboardCloseBtn.addEventListener('click', hideLeaderboard);
+
 function initGame2() {
   g2.y = H / 2; g2.vy = 0; g2.rot = 0;
   g2.animTimer = 0; g2.animFrame = 0;
@@ -1226,13 +1354,15 @@ function updateGame2() {
     if (g2.score > g2Best) g2Best = g2.score;
     SFX.crash();
     gameState = STATE.G2_OVER; stateTimer = 0;
+    submitG2Score();
   }
 }
 
 function getG2OverButtons() {
   return [
     { key: 'retry', x: W / 2 - 128, y: 150, w: 120, h: 22, label: 'VOAR DE NOVO' },
-    { key: 'back', x: W / 2 + 8, y: 150, w: 100, h: 22, label: 'VOLTAR' }
+    { key: 'back', x: W / 2 + 8, y: 150, w: 100, h: 22, label: 'VOLTAR' },
+    { key: 'leaderboard', x: W / 2 - 55, y: 178, w: 110, h: 20, label: 'VER PLACAR' }
   ];
 }
 function hitTestG2Over(pt) {
@@ -1386,7 +1516,7 @@ function drawGame2Over() {
   pixText('Pontuação: ' + g2.score + '   Recorde da sessão: ' + g2Best, W / 2, 104, '#fff', 8);
   pixText(pickG2Message(g2.score), W / 2, 120, '#bfe3ff', 7);
   for (const b of getG2OverButtons()) drawButton(b.x, b.y, b.w, b.h, b.label);
-  pixText('(Z/Enter = voar de novo · ESC = voltar)', W / 2, 188, '#888', 6);
+  pixText('(Z/Enter = voar de novo · ESC = voltar)', W / 2, 214, '#888', 6);
 }
 
 /* =========================================================================
@@ -1396,6 +1526,7 @@ function update() {
   stateTimer++;
   if (audioUnlocked && !musicPlaying) startMusic();
 
+  if (overlayActive) { clearFrameInputs(); return; }
   if (hitStop > 0) { hitStop--; clearFrameInputs(); return; }
 
   const confirm = keysPressedThisFrame.enter || keysPressedThisFrame.attack || keysPressedThisFrame.up;
@@ -1415,7 +1546,7 @@ function update() {
       if (clickedCard >= 0) { gameSelectHighlight = clickedCard; chosen = clickedCard; }
       else if (confirm) chosen = gameSelectHighlight;
       if (chosen === 0) { gameState = STATE.CHAR_SELECT; stateTimer = 0; }
-      else if (chosen === 1) { startGame2Intro(); }
+      else if (chosen === 1) { if (playerName) startGame2Intro(); else showNameEntry(); }
     }
   } else if (gameState === STATE.CHAR_SELECT) {
     if (keysPressedThisFrame.esc) { goToGameSelect(); }
@@ -1474,6 +1605,7 @@ function update() {
     else if (stateTimer > 20) {
       const clicked = hitTestG2Over(clickPoint);
       if (clicked === 'back') goToGameSelect();
+      else if (clicked === 'leaderboard') showLeaderboard();
       else if (clicked === 'retry' || confirm) startGame2Play();
     }
   }
@@ -2225,6 +2357,7 @@ function render() {
     case STATE.STAGE_CLEAR: drawStageClearScreen(); break;
     case STATE.GAME_OVER: drawGameOverScreen(); break;
     case STATE.VICTORY: drawVictoryScreen(); break;
+    case STATE.G2_NAME_ENTRY: drawGame2Background(); break;
     case STATE.G2_INTRO: drawGame2Intro(); break;
     case STATE.G2_PLAYING: drawGame2Playing(); break;
     case STATE.G2_OVER: drawGame2Over(); break;
