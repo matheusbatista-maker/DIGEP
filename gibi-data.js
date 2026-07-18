@@ -35,7 +35,7 @@ const EDICOES_GIBI = [
     status: 'lancado',
     capa: 'gibi-assets/edicao-02-capa.png',
     pdf: 'gibi-assets/edicao-02.pdf',
-    paginas: 8,
+    paginas: 9,
     pastaPaginas: 'gibi-assets/edicao-02-paginas'
   },
   {
@@ -45,7 +45,7 @@ const EDICOES_GIBI = [
     status: 'lancado',
     capa: 'gibi-assets/edicao-03-capa.png',
     pdf: null,
-    paginas: 9,
+    paginas: 10,
     pastaPaginas: 'gibi-assets/edicao-03-paginas'
   }
 ];
