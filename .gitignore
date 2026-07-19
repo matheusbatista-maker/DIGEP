@@ -8,3 +8,7 @@ DIGEP por Dentro - Portal (visual).html
 
 # Cache local do Wrangler (Cloudflare Pages)
 .wrangler/
+
+# Backup local dos arquivos-fonte brutos (imagens de referência, edições
+# originais do gibi) -- não faz parte do site publicado, só cópia de segurança
+_backup-fontes-gibi-desktop/
