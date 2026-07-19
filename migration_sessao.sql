@@ -1,0 +1,2 @@
+ALTER TABLE acessos ADD COLUMN sessao_nova INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE acessos ADD COLUMN sessao_id TEXT;

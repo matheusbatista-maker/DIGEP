@@ -79,9 +79,6 @@
       <div class="eyebrow">A trilogia em quadrinhos</div>
       <h1>Heróis contra a <span class="accent">burocracia</span></h1>
       <p>Três edições, um cidadão comum e a equipe que faz a Justiça andar nos bastidores. Do "Chamado" ao "Efeito Cascata" — escolha uma edição para começar a leitura.</p>
-      <p style="margin-top:18px;">
-        <a class="btn outline" href="gibi-assets/digep-por-dentro-completo.pdf" download>Baixar as 3 edições em PDF ↓</a>
-      </p>
     </div>
 
     <div class="editions" id="editionsGrid"></div>
@@ -176,7 +173,16 @@ for (const ed of EDICOES_GIBI) {
   grid.appendChild(card);
 }
 
+function logEvento(tipo, detalhe) {
+  fetch('/api/evento', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tipo, detalhe })
+  }).catch(() => {});
+}
+
 function abrirLeitor(ed) {
+  logEvento('gibi_leitura', 'Edição ' + pad(ed.numero));
   leitorTitulo.textContent = `Edição ${pad(ed.numero)} · ${ed.titulo}`;
   leitorStage.innerHTML = '';
   for (let i = 1; i <= ed.paginas; i++) {

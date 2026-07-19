@@ -765,6 +765,14 @@ let victoryConfetti = [];
 const SHOT_WORDS = ['DESPACHO', 'MANIFESTAÇÃO', 'PEDIDO DE PRAZO'];
 const GAME1_NAME = 'O MONSTRO CNJ CHEIO DE PROVIDÊNCIAS';
 
+function logEvento(tipo, detalhe) {
+  fetch('/api/evento', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tipo, detalhe })
+  }).catch(() => {});
+}
+
 function startStage() {
   level = buildLevel();
   player.coins = 0;
@@ -773,6 +781,7 @@ function startStage() {
   gameState = STATE.INTRO;
   stateTimer = 0;
   hitStop = 0;
+  logEvento('game_play', 'game1');
 }
 function chooseCharacterAndStart(charKey) {
   player.charKey = charKey;
@@ -1424,7 +1433,7 @@ function initGame2() {
   g2.started = false; g2.speed = PIPE_SPEED_BASE; g2.spacing = PIPE_SPACING_BASE;  // aguarda o 1º flap real antes de cair
 }
 function startGame2Intro() { initGame2(); gameState = STATE.G2_INTRO; stateTimer = 0; }
-function startGame2Play() { initGame2(); gameState = STATE.G2_PLAYING; stateTimer = 0; }
+function startGame2Play() { initGame2(); gameState = STATE.G2_PLAYING; stateTimer = 0; logEvento('game_play', 'game2'); }
 
 function updateG2Anim() {
   g2.animTimer++;

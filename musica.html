@@ -169,11 +169,21 @@ function formatar(s) {
 function pad(n) { return String(n).padStart(2, '0'); }
 
 let cardSelecionado = null;
+let faixaAtual = null;
+
+function logEvento(tipo, detalhe) {
+  fetch('/api/evento', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tipo, detalhe })
+  }).catch(() => {});
+}
 
 function selecionarFaixa(fx, cardEl) {
   if (cardSelecionado) cardSelecionado.classList.remove('selecionada');
   cardEl.classList.add('selecionada');
   cardSelecionado = cardEl;
+  faixaAtual = fx;
 
   capaImg.src = fx.capa;
   capaImg.alt = 'Capa da música "' + fx.titulo + '"';
@@ -261,6 +271,7 @@ audio.addEventListener('ended', () => {
 btnPlay.addEventListener('click', () => {
   if (audio.paused) {
     audio.play();
+    if (faixaAtual) logEvento('musica_play', faixaAtual.titulo);
     iconPlay.style.display = 'none';
     iconPause.style.display = '';
   } else {

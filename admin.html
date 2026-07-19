@@ -75,68 +75,49 @@ if (sessionStorage.getItem('digepAdminAuth') !== '1') {
 <main>
   <div class="page-head">
     <div class="eyebrow">Painel administrativo</div>
-    <h1>Controle de <span class="accent">lançamento</span></h1>
-    <p>Ative ou desative a publicação de cada edição do gibi no site. As alterações só valem pra todo mundo depois de clicar em "Publicar alterações".</p>
+    <h1>Estatísticas do <span class="accent">site</span></h1>
+    <p>Acessos, leituras do gibi, plays de música e partidas dos jogos — contagem automática, sem dados pessoais.</p>
   </div>
 
   <div class="admin-bar">
     <div class="who">Logado como <strong id="quemEsta">—</strong></div>
   </div>
 
-  <div class="admin-editions" id="adminEditions"></div>
-
-  <div class="admin-publish-row">
-    <button class="btn" id="btnPublicar" disabled>Publicar alterações</button>
-    <span class="publish-status" id="publishStatus"></span>
-  </div>
-
-  <div class="page-head" style="padding-top:10px;">
-    <div class="eyebrow">Estatísticas</div>
-    <h1 style="font-size:clamp(22px, 4vw, 30px);">Acessos ao <span class="accent">site</span></h1>
-    <p>Contagem automática de visitas às páginas do site (sem dados pessoais, só data e hora).</p>
-  </div>
-
   <div class="stats-row" id="statsRow">
-    <div class="stat-tile"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total geral</div></div>
+    <div class="stat-tile"><div class="stat-num" id="statVisitas">—</div><div class="stat-label">Visitas totais</div></div>
     <div class="stat-tile"><div class="stat-num" id="statHoje">—</div><div class="stat-label">Hoje</div></div>
     <div class="stat-tile"><div class="stat-num" id="statSemana">—</div><div class="stat-label">Últimos 7 dias</div></div>
+    <div class="stat-tile"><div class="stat-num" id="statPaginas">—</div><div class="stat-label">Páginas vistas</div></div>
+    <div class="stat-tile"><div class="stat-num" id="statMedia">—</div><div class="stat-label">Páginas / visita</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card chart-wide">
+      <h3>Visitas por dia (últimos 14)</h3>
+      <div class="chart-box"><canvas id="chartPorDia"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Páginas mais visitadas</h3>
+      <div class="chart-box"><canvas id="chartPaginas"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Edições do gibi mais lidas</h3>
+      <div class="chart-box"><canvas id="chartGibi"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Faixas mais tocadas</h3>
+      <div class="chart-box"><canvas id="chartMusica"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Game 1 vs Game 2</h3>
+      <div class="chart-box"><canvas id="chartJogos"></canvas></div>
+    </div>
   </div>
 
   <div class="stats-tables">
     <div class="stats-col">
-      <h3>Por dia (últimos 14)</h3>
-      <div id="statsPorDia" class="stats-list"></div>
-    </div>
-    <div class="stats-col">
-      <h3>Acessos recentes</h3>
+      <h3>Visitas recentes</h3>
       <div id="statsRecentes" class="stats-list"></div>
-    </div>
-  </div>
-
-  <div class="token-box">
-    <h3>Configuração do GitHub</h3>
-    <p>
-      Preencha uma única vez neste navegador. Use um token de acesso <strong>fine-grained</strong> restrito
-      só a este repositório, com permissão apenas de "Contents: Read and write". Ele fica salvo só aqui
-      (localStorage) e é usado só pra chamar a API do GitHub direto desta página — nunca é enviado a mais ninguém.
-    </p>
-    <div class="token-row">
-      <div class="access-field" style="flex:1; min-width:200px;">
-        <label for="cfgRepo">Repositório (usuário/repo)</label>
-        <input type="text" id="cfgRepo" placeholder="seu-usuario/digep-por-dentro">
-      </div>
-      <div class="access-field" style="width:110px;">
-        <label for="cfgBranch">Branch</label>
-        <input type="text" id="cfgBranch" placeholder="main">
-      </div>
-      <div class="access-field" style="width:170px;">
-        <label for="cfgPath">Caminho do arquivo</label>
-        <input type="text" id="cfgPath" placeholder="gibi-data.js">
-      </div>
-      <div class="access-field" style="flex:1; min-width:200px;">
-        <label for="cfgToken">Token de acesso</label>
-        <input type="password" id="cfgToken" placeholder="github_pat_...">
-      </div>
     </div>
   </div>
 </main>
@@ -145,7 +126,7 @@ if (sessionStorage.getItem('digepAdminAuth') !== '1') {
   <strong>GABDIGEP</strong> — Gabinete da Diretoria de Gestão de Pessoas · Tribunal de Justiça do Estado do Tocantins
 </footer>
 
-<script src="gibi-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 document.getElementById('quemEsta').textContent = sessionStorage.getItem('digepAdminUser') || 'admin';
 
@@ -155,231 +136,123 @@ document.getElementById('btnSair').addEventListener('click', () => {
   location.href = 'login.html';
 });
 
-function pad(n) { return String(n).padStart(2, '0'); }
-
-const baseline = {};
-EDICOES_GIBI.forEach((ed) => { baseline[ed.numero] = ed.status; });
-const pendentes = {}; // numero -> novo status, só entra aqui quando difere do baseline
-
-const cont = document.getElementById('adminEditions');
-const btnPublicar = document.getElementById('btnPublicar');
-const publishStatus = document.getElementById('publishStatus');
-
-function atualizarBotaoPublicar() {
-  const temMudanca = Object.keys(pendentes).length > 0;
-  btnPublicar.disabled = !temMudanca;
-}
-
-function render() {
-  cont.innerHTML = '';
-  EDICOES_GIBI.forEach((ed) => {
-    const statusAtual = pendentes.hasOwnProperty(ed.numero) ? pendentes[ed.numero] : ed.status;
-    const lancado = statusAtual === 'lancado';
-    const pronto = ed.paginas > 0 && !!ed.pastaPaginas;
-
-    const card = document.createElement('div');
-    card.className = 'admin-edition-card';
-    card.innerHTML = `
-      <div class="cover"><img src="${ed.capa}" alt=""></div>
-      <div class="info">
-        <div class="num">Edição ${pad(ed.numero)}</div>
-        <h3>${ed.titulo}</h3>
-        <div class="ready-note ${pronto ? 'ok' : 'bad'}">
-          ${pronto ? `✓ Arte pronta (${ed.paginas} páginas)` : '⚠ Faltam páginas — não dá pra publicar ainda'}
-        </div>
-      </div>
-      <div class="toggle-status">
-        <span class="label ${!lancado ? 'on' : ''}">Em breve</span>
-        <label class="switch">
-          <input type="checkbox" data-numero="${ed.numero}" ${lancado ? 'checked' : ''} ${pronto ? '' : 'disabled'}>
-          <span class="slider"></span>
-        </label>
-        <span class="label ${lancado ? 'on' : ''}">Lançado</span>
-      </div>
-    `;
-    cont.appendChild(card);
-  });
-
-  cont.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-    input.addEventListener('change', (e) => {
-      const numero = Number(e.target.dataset.numero);
-      const novoStatus = e.target.checked ? 'lancado' : 'em_breve';
-      if (novoStatus === baseline[numero]) delete pendentes[numero];
-      else pendentes[numero] = novoStatus;
-      atualizarBotaoPublicar();
-      render();
-    });
-  });
-}
-render();
-
-// ----- estatísticas de acesso -----
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 function formatarDiaBr(diaISO) {
   const [ano, mes, dia] = diaISO.split('-');
-  return `${dia}/${mes}/${ano}`;
+  return `${dia}/${mes}`;
 }
 function formatarDataHoraBr(sqlDateTime) {
-  // sqlDateTime vem como "YYYY-MM-DD HH:MM:SS" (UTC, saída do datetime('now') do SQLite)
   const iso = sqlDateTime.replace(' ', 'T') + 'Z';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return sqlDateTime;
   return d.toLocaleString('pt-BR', { timeZone: 'America/Araguaina', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+const CORES = ['#f0c040', '#578fb6', '#d9534f', '#7fbf8f', '#c084e0', '#e08a4a', '#4ac0c0', '#e06b9e'];
+
+const CHART_DEFAULTS = {
+  color: '#8b9ac2',
+  font: { family: "'Barlow Semi Condensed', sans-serif", size: 11 }
+};
+
+function graficoBarra(canvasId, labels, valores, horizontal) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: valores, backgroundColor: labels.map((_, i) => CORES[i % CORES.length]), borderRadius: 5, maxBarThickness: 34 }]
+    },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: CHART_DEFAULTS, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: CHART_DEFAULTS, grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function graficoDoughnut(canvasId, labels, valores) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: valores, backgroundColor: labels.map((_, i) => CORES[i % CORES.length]) }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#8b9ac2', font: CHART_DEFAULTS.font } } }
+    }
+  });
+}
+
+function mensagemVazia(canvasId, texto) {
+  const canvas = document.getElementById(canvasId);
+  const box = canvas.closest('.chart-box');
+  box.innerHTML = `<div class="chart-empty">${texto}</div>`;
+}
+
 async function carregarEstatisticas() {
   try {
-    const resp = await fetch('/api/acessos', { cache: 'no-store' });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
+    const [respAcessos, respEventos] = await Promise.all([
+      fetch('/api/acessos', { cache: 'no-store' }),
+      fetch('/api/evento', { cache: 'no-store' })
+    ]);
+    const acessos = await respAcessos.json();
+    const eventos = await respEventos.json();
 
-    document.getElementById('statTotal').textContent = data.total;
-    document.getElementById('statHoje').textContent = data.hoje;
-    document.getElementById('statSemana').textContent = data.ultimos7dias;
+    document.getElementById('statVisitas').textContent = acessos.visitas.total;
+    document.getElementById('statHoje').textContent = acessos.visitas.hoje;
+    document.getElementById('statSemana').textContent = acessos.visitas.ultimos7dias;
+    document.getElementById('statPaginas').textContent = acessos.paginasVistas.total;
+    document.getElementById('statMedia').textContent = acessos.mediaPaginasPorVisita;
 
-    const porDiaEl = document.getElementById('statsPorDia');
-    porDiaEl.innerHTML = data.porDia.length
-      ? data.porDia.map((r) => `<div class="stats-row-item"><span>${formatarDiaBr(r.dia)}</span><strong>${r.total}</strong></div>`).join('')
-      : '<div class="stats-row-item stats-empty">Sem acessos registrados ainda.</div>';
+    // visitas por dia -- inverte pra ordem cronológica (esquerda -> direita)
+    const porDia = [...acessos.porDia].reverse();
+    if (porDia.length) {
+      graficoBarra('chartPorDia', porDia.map((r) => formatarDiaBr(r.dia)), porDia.map((r) => r.total), false);
+    } else {
+      mensagemVazia('chartPorDia', 'Sem visitas registradas ainda.');
+    }
+
+    if (acessos.paginasMaisVisitadas.length) {
+      graficoBarra('chartPaginas', acessos.paginasMaisVisitadas.map((r) => r.pagina), acessos.paginasMaisVisitadas.map((r) => r.total), true);
+    } else {
+      mensagemVazia('chartPaginas', 'Sem dados ainda.');
+    }
+
+    if (eventos.gibi.length) {
+      graficoBarra('chartGibi', eventos.gibi.map((r) => r.detalhe), eventos.gibi.map((r) => r.total), false);
+    } else {
+      mensagemVazia('chartGibi', 'Ninguém abriu o gibi ainda.');
+    }
+
+    if (eventos.musica.length) {
+      graficoBarra('chartMusica', eventos.musica.map((r) => r.detalhe), eventos.musica.map((r) => r.total), true);
+    } else {
+      mensagemVazia('chartMusica', 'Nenhuma faixa tocada ainda.');
+    }
+
+    if (eventos.jogos.length) {
+      const nomes = { game1: 'Monstro CNJ', game2: 'Voo da Arara' };
+      graficoDoughnut('chartJogos', eventos.jogos.map((r) => nomes[r.detalhe] || r.detalhe), eventos.jogos.map((r) => r.total));
+    } else {
+      mensagemVazia('chartJogos', 'Ninguém jogou ainda.');
+    }
 
     const recentesEl = document.getElementById('statsRecentes');
-    recentesEl.innerHTML = data.recentes.length
-      ? data.recentes.map((r) => `<div class="stats-row-item"><span>${escapeHtml(r.pagina)}</span><strong>${formatarDataHoraBr(r.criado_em)}</strong></div>`).join('')
-      : '<div class="stats-row-item stats-empty">Sem acessos registrados ainda.</div>';
+    recentesEl.innerHTML = acessos.recentes.length
+      ? acessos.recentes.map((r) => `<div class="stats-row-item"><span>${escapeHtml(r.pagina)}</span><strong>${formatarDataHoraBr(r.criado_em)}</strong></div>`).join('')
+      : '<div class="stats-row-item stats-empty">Sem visitas registradas ainda.</div>';
   } catch (e) {
-    document.getElementById('statTotal').textContent = '—';
-    document.getElementById('statsPorDia').innerHTML = '<div class="stats-row-item stats-empty">Não consegui carregar as estatísticas agora.</div>';
+    document.getElementById('statVisitas').textContent = '—';
+    document.getElementById('statsRecentes').innerHTML = '<div class="stats-row-item stats-empty">Não consegui carregar as estatísticas agora.</div>';
   }
 }
 carregarEstatisticas();
-
-// ----- config do GitHub (salva em localStorage deste navegador) -----
-const cfgRepo = document.getElementById('cfgRepo');
-const cfgBranch = document.getElementById('cfgBranch');
-const cfgPath = document.getElementById('cfgPath');
-const cfgToken = document.getElementById('cfgToken');
-
-cfgRepo.value = localStorage.getItem('digepGhRepo') || '';
-cfgBranch.value = localStorage.getItem('digepGhBranch') || 'main';
-cfgPath.value = localStorage.getItem('digepGhPath') || 'gibi-data.js';
-cfgToken.value = localStorage.getItem('digepGhToken') || '';
-
-function mostrarStatus(msg, tipo) {
-  publishStatus.textContent = msg;
-  publishStatus.className = 'publish-status' + (tipo ? ' ' + tipo : '');
-}
-
-function aplicarMudancasNoTexto(textoOriginal, mudancas) {
-  return textoOriginal.replace(
-    /(\{\s*numero:\s*(\d+),[\s\S]*?status:\s*')(lancado|em_breve)(')/g,
-    (match, prefixo, numeroStr, statusAtual, sufixo) => {
-      const numero = Number(numeroStr);
-      if (Object.prototype.hasOwnProperty.call(mudancas, numero)) {
-        return prefixo + mudancas[numero] + sufixo;
-      }
-      return match;
-    }
-  );
-}
-
-function base64ParaTexto(base64) {
-  const bytes = Uint8Array.from(atob(base64.replace(/\n/g, '')), (c) => c.charCodeAt(0));
-  return new TextDecoder('utf-8').decode(bytes);
-}
-
-function textoParaBase64(texto) {
-  const bytes = new TextEncoder().encode(texto);
-  let binario = '';
-  bytes.forEach((b) => { binario += String.fromCharCode(b); });
-  return btoa(binario);
-}
-
-btnPublicar.addEventListener('click', async () => {
-  const repo = cfgRepo.value.trim();
-  const branch = cfgBranch.value.trim() || 'main';
-  const path = cfgPath.value.trim() || 'gibi-data.js';
-  const token = cfgToken.value.trim();
-
-  if (!repo || !token) {
-    mostrarStatus('Preencha repositório e token do GitHub antes de publicar.', 'err');
-    return;
-  }
-  localStorage.setItem('digepGhRepo', repo);
-  localStorage.setItem('digepGhBranch', branch);
-  localStorage.setItem('digepGhPath', path);
-  localStorage.setItem('digepGhToken', token);
-
-  btnPublicar.disabled = true;
-  mostrarStatus('Publicando...', '');
-
-  const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
-  const headers = { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' };
-
-  // Faz uma tentativa de publicação (lê o sha mais recente e grava por cima).
-  // Sempre com cache: 'no-store' -- sem isso o navegador pode reaproveitar uma
-  // resposta antiga do GET e mandar um sha desatualizado no PUT (erro 409).
-  async function tentarPublicarUmaVez() {
-    const getResp = await fetch(`${apiUrl}?ref=${encodeURIComponent(branch)}`, { headers, cache: 'no-store' });
-    if (!getResp.ok) {
-      throw new Error(`Não consegui ler o arquivo no GitHub (HTTP ${getResp.status}). Confira repositório, branch, caminho e token.`);
-    }
-    const getData = await getResp.json();
-    const textoAtual = base64ParaTexto(getData.content);
-    const textoNovo = aplicarMudancasNoTexto(textoAtual, pendentes);
-    const numerosAlterados = Object.keys(pendentes);
-
-    const putResp = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `Admin: atualiza status da(s) edição(ões) ${numerosAlterados.join(', ')} do gibi`,
-        content: textoParaBase64(textoNovo),
-        sha: getData.sha,
-        branch
-      })
-    });
-
-    if (!putResp.ok) {
-      const errBody = await putResp.json().catch(() => ({}));
-      const erro = new Error(`Falha ao publicar (HTTP ${putResp.status}): ${errBody.message || 'erro desconhecido'}.`);
-      erro.status = putResp.status;
-      throw erro;
-    }
-    return numerosAlterados;
-  }
-
-  try {
-    let numerosAlterados;
-    try {
-      numerosAlterados = await tentarPublicarUmaVez();
-    } catch (err) {
-      // sha desatualizado (409) costuma ser só uma corrida com o cache do
-      // navegador -- tenta mais uma vez automaticamente antes de desistir.
-      if (err.status === 409) {
-        numerosAlterados = await tentarPublicarUmaVez();
-      } else {
-        throw err;
-      }
-    }
-
-    numerosAlterados.forEach((numeroStr) => {
-      const numero = Number(numeroStr);
-      baseline[numero] = pendentes[numero];
-      const ed = EDICOES_GIBI.find((e) => e.numero === numero);
-      if (ed) ed.status = pendentes[numero];
-      delete pendentes[numero];
-    });
-
-    mostrarStatus('Publicado! O site no ar deve atualizar em cerca de 1 minuto.', 'ok');
-    render();
-  } catch (err) {
-    mostrarStatus(err.message, 'err');
-  } finally {
-    atualizarBotaoPublicar();
-  }
-});
 </script>
 </body>
 </html>
