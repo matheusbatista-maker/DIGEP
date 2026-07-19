@@ -98,14 +98,17 @@ export async function onRequestPost(context) {
     return Response.json({ erro: 'Nome ou unidade contém termo não permitido.' }, { status: 400 });
   }
 
+  // sessão é obrigatória pro rate-limit valer -- sem isso, bastava omitir o
+  // cookie (fácil de fazer num script) pra pular o limite inteiro.
   const sessaoId = lerCookie(context.request.headers.get('Cookie'), COOKIE_NOME);
-  if (sessaoId) {
-    const recente = await context.env.DB.prepare(
-      "SELECT COUNT(*) AS total FROM pontuacoes WHERE sessao_id = ? AND criado_em > datetime('now', ?)"
-    ).bind(sessaoId, `-${JANELA_MIN_SEGUNDOS} seconds`).first();
-    if (recente.total > 0) {
-      return Response.json({ erro: 'Aguarde alguns segundos antes de enviar outra pontuação.' }, { status: 429 });
-    }
+  if (!sessaoId) {
+    return Response.json({ erro: 'Sessão inválida. Recarregue a página e tente novamente.' }, { status: 400 });
+  }
+  const recente = await context.env.DB.prepare(
+    "SELECT COUNT(*) AS total FROM pontuacoes WHERE sessao_id = ? AND criado_em > datetime('now', ?)"
+  ).bind(sessaoId, `-${JANELA_MIN_SEGUNDOS} seconds`).first();
+  if (recente.total > 0) {
+    return Response.json({ erro: 'Aguarde alguns segundos antes de enviar outra pontuação.' }, { status: 429 });
   }
 
   await context.env.DB.prepare(
