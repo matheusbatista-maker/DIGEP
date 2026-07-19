@@ -6,7 +6,22 @@ const MAX_NOME = 20;
 const MAX_UNIDADE = 40;
 const MAX_PONTUACAO = 999999;
 const MAX_PAGE_SIZE = 50;
-const SELECT_PAGE = 'SELECT nome, unidade, pontuacao FROM pontuacoes ORDER BY pontuacao DESC, criado_em ASC LIMIT ? OFFSET ?';
+
+// GABDIGEP não entra na contagem do ranking (é a equipe que fez o jogo), mas a
+// linha continua aparecendo na lista -- "rankReal" é a posição só entre quem
+// não é GABDIGEP; sai NULL pras linhas do GABDIGEP (o front mostra X nelas).
+const SELECT_PAGE = `
+  SELECT nome, unidade, pontuacao,
+    CASE WHEN UPPER(TRIM(unidade)) = 'GABDIGEP' THEN NULL ELSE (
+      SELECT COUNT(*) + 1 FROM pontuacoes p2
+      WHERE UPPER(TRIM(p2.unidade)) != 'GABDIGEP'
+        AND (p2.pontuacao > pontuacoes.pontuacao
+             OR (p2.pontuacao = pontuacoes.pontuacao AND p2.criado_em < pontuacoes.criado_em))
+    ) END AS rankReal
+  FROM pontuacoes
+  ORDER BY pontuacao DESC, criado_em ASC
+  LIMIT ? OFFSET ?
+`;
 
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);

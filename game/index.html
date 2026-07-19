@@ -1371,14 +1371,14 @@ async function loadLeaderboardPage(page) {
         ? '<div class="lbRow lbLoading">Ninguém voou ainda. Seja o primeiro!</div>'
         : '<div class="lbRow lbLoading">Não tem mais pontuações aqui.</div>';
     } else {
-      const baseRank = (g2LbPage - 1) * G2_LB_PAGE_SIZE;
-      leaderboardList.innerHTML = items.map((row, i) => {
-        const rank = baseRank + i + 1;
+      leaderboardList.innerHTML = items.map((row) => {
         const ehGabdigep = String(row.unidade || '').trim().toUpperCase() === 'GABDIGEP';
-        // GABDIGEP não vale medalha (é a equipe que fez o jogo) -- mostra X no lugar,
-        // mas a linha continua contando normalmente na posição do ranking.
+        // GABDIGEP não entra na contagem do ranking (é a equipe que fez o jogo) --
+        // "rankReal" já vem do servidor contando só quem não é GABDIGEP, então
+        // quem pontuar depois deles herda a posição/medalha certa (ex: 1º real).
+        const rank = row.rankReal;
         const posLabel = ehGabdigep ? '✗' : (G2_MEDALS[rank - 1] || (rank + 'º'));
-        const topClass = rank <= 3 ? ` lbTop${rank}` : '';
+        const topClass = (!ehGabdigep && rank <= 3) ? ` lbTop${rank}` : '';
         const unidadeHtml = escapeHtml(row.unidade || '') +
           (ehGabdigep ? ' <span class="lbCheat">🍬 não vale, marmelada de dev!</span>' : '');
         return `<div class="lbRow${topClass}">
