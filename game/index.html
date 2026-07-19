@@ -773,6 +773,8 @@ function logEvento(tipo, detalhe) {
   }).catch(() => {});
 }
 
+let jogadaG1Registrada = false;
+
 function startStage() {
   level = buildLevel();
   player.coins = 0;
@@ -781,7 +783,7 @@ function startStage() {
   gameState = STATE.INTRO;
   stateTimer = 0;
   hitStop = 0;
-  logEvento('game_play', 'game1');
+  jogadaG1Registrada = false; // só conta "jogou" no 1º movimento de verdade (ver updatePlayer)
 }
 function chooseCharacterAndStart(charKey) {
   player.charKey = charKey;
@@ -821,6 +823,10 @@ function fireShot() {
 }
 
 function updatePlayer() {
+  if (!jogadaG1Registrada && (keys.left || keys.right || keys.up || keys.attack || keysPressedThisFrame.attack || keysPressedThisFrame.power)) {
+    jogadaG1Registrada = true;
+    logEvento('game_play', 'game1');
+  }
   // Modo Diretora (só Paula)
   if (player.charKey === 'paula') {
     if (player.power.active > 0) player.power.active--;
@@ -1433,7 +1439,7 @@ function initGame2() {
   g2.started = false; g2.speed = PIPE_SPEED_BASE; g2.spacing = PIPE_SPACING_BASE;  // aguarda o 1º flap real antes de cair
 }
 function startGame2Intro() { initGame2(); gameState = STATE.G2_INTRO; stateTimer = 0; }
-function startGame2Play() { initGame2(); gameState = STATE.G2_PLAYING; stateTimer = 0; logEvento('game_play', 'game2'); }
+function startGame2Play() { initGame2(); gameState = STATE.G2_PLAYING; stateTimer = 0; }
 
 function updateG2Anim() {
   g2.animTimer++;
@@ -1472,7 +1478,7 @@ function updateGame2() {
 
   // congelado esperando o 1º flap real: nada se move, evita a queda instantânea
   if (!g2.started) {
-    if (flap) { g2.started = true; g2.vy = FLAP_VY; SFX.flap(); }
+    if (flap) { g2.started = true; g2.vy = FLAP_VY; SFX.flap(); logEvento('game_play', 'game2'); }
     return;
   }
 
