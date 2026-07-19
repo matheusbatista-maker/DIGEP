@@ -1,14 +1,19 @@
 // Roda em toda requisição do Pages antes de servir o arquivo estático.
 // Registra uma linha por navegação de página real (não conta imagens, PDF,
-// JS/CSS, chamadas de API etc.) -- identifica "página real" pelo cabeçalho
-// Accept que o navegador manda ao navegar (contém text/html).
+// JS/CSS, chamadas de API etc.) -- a página só é contada se o caminho
+// normalizado estiver na allowlist abaixo (ver PAGINAS_VALIDAS).
 //
 // Deduplicação de visitas: um cookie de sessão (30min, renovado a cada
 // navegação) marca se essa é a 1ª página vista nessa sessão. Sem isso,
 // alguém clicando entre Início/Gibi/Game/Música contaria como vários
 // "acessos" em vez de uma única visita.
 
-const PAGINAS_IGNORADAS = ['/login', '/admin'];
+// Allowlist das páginas reais do site -- não confiar em "Accept: text/html"
+// sozinho pra decidir o que é página: bots/scanners mandam esse cabeçalho
+// mesmo pedindo assets (.js, .svg, .css) ou caminhos inexistentes, e o Pages
+// responde 200 com o index.html pra qualquer rota não encontrada (fallback
+// padrão dele), então esses dois sinais juntos não bastam.
+const PAGINAS_VALIDAS = ['/', '/gibi', '/game', '/musica'];
 const COOKIE_NOME = 'digep_sid';
 const SESSAO_SEGUNDOS = 1800; // 30 minutos
 
@@ -46,7 +51,7 @@ export async function onRequest(context) {
   if (!ehNavegacaoDePagina || !response.ok) return response;
 
   const pagina = normalizarPagina(url.pathname);
-  if (PAGINAS_IGNORADAS.includes(pagina)) return response;
+  if (!PAGINAS_VALIDAS.includes(pagina)) return response;
 
   const sidAtual = lerCookie(request.headers.get('Cookie'), COOKIE_NOME);
   const sessaoNova = sidAtual ? 0 : 1;
