@@ -143,6 +143,17 @@ function formatarDiaBr(diaISO) {
   const [ano, mes, dia] = diaISO.split('-');
   return `${dia}/${mes}`;
 }
+const NOMES_PAGINA = {
+  '/': 'Home',
+  '/gibi': 'Gibi',
+  '/game': 'Game',
+  '/musica': 'Músicas',
+  '/login': 'Acesso',
+  '/admin': 'Admin'
+};
+function nomePagina(pagina) {
+  return NOMES_PAGINA[pagina] || pagina;
+}
 function formatarDataHoraBr(sqlDateTime) {
   const iso = sqlDateTime.replace(' ', 'T') + 'Z';
   const d = new Date(iso);
@@ -219,7 +230,7 @@ async function carregarEstatisticas() {
     }
 
     if (acessos.paginasMaisVisitadas.length) {
-      graficoBarra('chartPaginas', acessos.paginasMaisVisitadas.map((r) => r.pagina), acessos.paginasMaisVisitadas.map((r) => r.total), true);
+      graficoBarra('chartPaginas', acessos.paginasMaisVisitadas.map((r) => nomePagina(r.pagina)), acessos.paginasMaisVisitadas.map((r) => r.total), true);
     } else {
       mensagemVazia('chartPaginas', 'Sem dados ainda.');
     }
@@ -245,7 +256,7 @@ async function carregarEstatisticas() {
 
     const recentesEl = document.getElementById('statsRecentes');
     recentesEl.innerHTML = acessos.recentes.length
-      ? acessos.recentes.map((r) => `<div class="stats-row-item"><span>${escapeHtml(r.pagina)}</span><strong>${formatarDataHoraBr(r.criado_em)}</strong></div>`).join('')
+      ? acessos.recentes.map((r) => `<div class="stats-row-item"><span>${escapeHtml(nomePagina(r.pagina))}</span><strong>${formatarDataHoraBr(r.criado_em)}</strong></div>`).join('')
       : '<div class="stats-row-item stats-empty">Sem visitas registradas ainda.</div>';
   } catch (e) {
     document.getElementById('statVisitas').textContent = '—';
