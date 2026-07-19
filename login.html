@@ -95,7 +95,10 @@
 // Login simples do lado do cliente — este site é 100% estático (sem backend),
 // então isto é uma barreira de conveniência, não segurança real: quem inspecionar
 // o código consegue ver a lógica. O hash abaixo evita só a leitura direta da senha.
-const HASH_ESPERADO = '03563d10816084978bc6c4ff45cdcae380e6b3ff7f3921b1b47480ae2dd16f53';
+const HASHES_ESPERADOS = [
+  '03563d10816084978bc6c4ff45cdcae380e6b3ff7f3921b1b47480ae2dd16f53',
+  'd2cac0feeab8f86244a5e9dc418f4d03d91e50ed5486da13db7af215a85ac261'
+];
 
 async function sha256Hex(texto) {
   const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texto));
@@ -116,7 +119,7 @@ form.addEventListener('submit', async (e) => {
   const senha = document.getElementById('senha').value;
   const hash = await sha256Hex(`${email}:${senha}`);
 
-  if (hash === HASH_ESPERADO) {
+  if (HASHES_ESPERADOS.includes(hash)) {
     sessionStorage.setItem('digepAdminAuth', '1');
     sessionStorage.setItem('digepAdminUser', email);
     location.href = 'admin.html';
