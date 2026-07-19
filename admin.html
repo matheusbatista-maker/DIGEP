@@ -90,6 +90,29 @@ if (sessionStorage.getItem('digepAdminAuth') !== '1') {
     <span class="publish-status" id="publishStatus"></span>
   </div>
 
+  <div class="page-head" style="padding-top:10px;">
+    <div class="eyebrow">Estatísticas</div>
+    <h1 style="font-size:clamp(22px, 4vw, 30px);">Acessos ao <span class="accent">site</span></h1>
+    <p>Contagem automática de visitas às páginas do site (sem dados pessoais, só data e hora).</p>
+  </div>
+
+  <div class="stats-row" id="statsRow">
+    <div class="stat-tile"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total geral</div></div>
+    <div class="stat-tile"><div class="stat-num" id="statHoje">—</div><div class="stat-label">Hoje</div></div>
+    <div class="stat-tile"><div class="stat-num" id="statSemana">—</div><div class="stat-label">Últimos 7 dias</div></div>
+  </div>
+
+  <div class="stats-tables">
+    <div class="stats-col">
+      <h3>Por dia (últimos 14)</h3>
+      <div id="statsPorDia" class="stats-list"></div>
+    </div>
+    <div class="stats-col">
+      <h3>Acessos recentes</h3>
+      <div id="statsRecentes" class="stats-list"></div>
+    </div>
+  </div>
+
   <div class="token-box">
     <h3>Configuração do GitHub</h3>
     <p>
@@ -189,6 +212,48 @@ function render() {
   });
 }
 render();
+
+// ----- estatísticas de acesso -----
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function formatarDiaBr(diaISO) {
+  const [ano, mes, dia] = diaISO.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+function formatarDataHoraBr(sqlDateTime) {
+  // sqlDateTime vem como "YYYY-MM-DD HH:MM:SS" (UTC, saída do datetime('now') do SQLite)
+  const iso = sqlDateTime.replace(' ', 'T') + 'Z';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return sqlDateTime;
+  return d.toLocaleString('pt-BR', { timeZone: 'America/Araguaina', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function carregarEstatisticas() {
+  try {
+    const resp = await fetch('/api/acessos', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+
+    document.getElementById('statTotal').textContent = data.total;
+    document.getElementById('statHoje').textContent = data.hoje;
+    document.getElementById('statSemana').textContent = data.ultimos7dias;
+
+    const porDiaEl = document.getElementById('statsPorDia');
+    porDiaEl.innerHTML = data.porDia.length
+      ? data.porDia.map((r) => `<div class="stats-row-item"><span>${formatarDiaBr(r.dia)}</span><strong>${r.total}</strong></div>`).join('')
+      : '<div class="stats-row-item stats-empty">Sem acessos registrados ainda.</div>';
+
+    const recentesEl = document.getElementById('statsRecentes');
+    recentesEl.innerHTML = data.recentes.length
+      ? data.recentes.map((r) => `<div class="stats-row-item"><span>${escapeHtml(r.pagina)}</span><strong>${formatarDataHoraBr(r.criado_em)}</strong></div>`).join('')
+      : '<div class="stats-row-item stats-empty">Sem acessos registrados ainda.</div>';
+  } catch (e) {
+    document.getElementById('statTotal').textContent = '—';
+    document.getElementById('statsPorDia').innerHTML = '<div class="stats-row-item stats-empty">Não consegui carregar as estatísticas agora.</div>';
+  }
+}
+carregarEstatisticas();
 
 // ----- config do GitHub (salva em localStorage deste navegador) -----
 const cfgRepo = document.getElementById('cfgRepo');
