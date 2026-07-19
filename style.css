@@ -219,8 +219,6 @@ footer strong { color: var(--gold); }
 }
 .eyebrow::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
 
-.poder-judiciario-logo { width: 100%; max-width: 380px; height: auto; margin-bottom: 22px; opacity: 0.92; }
-
 .gabdigep-kicker {
   display: inline-flex; align-items: center; gap: 10px;
   font-family: 'Barlow Semi Condensed', sans-serif;
