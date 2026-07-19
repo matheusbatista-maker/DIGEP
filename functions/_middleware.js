@@ -38,11 +38,17 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const accept = request.headers.get('Accept') || '';
+  // Sec-Fetch-Dest diz o que o navegador está carregando (document, iframe,
+  // image, script...). A página "game" embute a si mesma num <iframe>; sem
+  // esse filtro, o carregamento do iframe também contaria como visita à
+  // página, dobrando o número. Só "document" é navegação de página de verdade.
+  const destino = request.headers.get('Sec-Fetch-Dest');
 
   const ehNavegacaoDePagina =
     request.method === 'GET' &&
     accept.includes('text/html') &&
-    !url.pathname.startsWith('/api/');
+    !url.pathname.startsWith('/api/') &&
+    (destino === null || destino === 'document');
 
   const response = await context.next();
 
