@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS pontuacoes (
   nome TEXT NOT NULL,
   unidade TEXT NOT NULL DEFAULT '',
   pontuacao INTEGER NOT NULL,
+  sessao_id TEXT,
   criado_em TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_pontuacoes_pontuacao ON pontuacoes (pontuacao DESC);
@@ -36,3 +37,5 @@ CREATE INDEX IF NOT EXISTS idx_eventos_tipo ON eventos (tipo, detalhe);
 -- migration_sessao.sql -> ALTER TABLE acessos ADD COLUMN sessao_nova / sessao_id
 --   (deduplica visitas da mesma pessoa navegando entre abas)
 -- migration_eventos.sql -> cria a tabela eventos (plays de música/game/gibi)
+-- migration_pontuacoes_sessao.sql -> ALTER TABLE pontuacoes ADD COLUMN sessao_id TEXT;
+--   (limite de 1 envio a cada 5s por sessão, anti-spam do placar público)

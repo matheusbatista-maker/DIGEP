@@ -4,8 +4,44 @@
 
 const MAX_NOME = 20;
 const MAX_UNIDADE = 40;
-const MAX_PONTUACAO = 999999;
+// teto folgado (recorde real até agora é bem menor) -- só existe pra barrar
+// alguém colando um valor absurdo tipo 999999 direto no console, sem jogar.
+const MAX_PONTUACAO = 5000;
 const MAX_PAGE_SIZE = 50;
+const COOKIE_NOME = 'digep_sid';
+const JANELA_MIN_SEGUNDOS = 5; // intervalo mínimo entre envios da mesma sessão
+
+// lista curta de termos ofensivos comuns em pt-BR -- não é exaustiva, é só
+// pra barrar a piada mais óbvia num placar que fica público durante o
+// lançamento (nome/unidade são texto livre).
+const PALAVRAS_BLOQUEADAS = [
+  'porra', 'merda', 'caralho', 'puta', 'buceta', 'cacete', 'foda', 'fdp',
+  'arrombado', 'arrombada', 'desgraca', 'viado', 'cuzao', 'otario', 'imbecil',
+  'retardado', 'babaca', 'corno', 'safado', 'safada', 'vagabundo', 'vagabunda',
+  'piranha', 'vadia', 'cu ', ' cu', 'pau no cu', 'filho da puta', 'racista',
+  'macaco', 'nazista'
+];
+
+function lerCookie(header, nome) {
+  if (!header) return null;
+  const m = header.match(new RegExp('(?:^|;\\s*)' + nome + '=([^;]*)'));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function normalizar(texto) {
+  const semAcento = texto.toLowerCase().normalize('NFD');
+  let limpo = '';
+  for (const ch of semAcento) {
+    const code = ch.codePointAt(0);
+    if (code < 0x0300 || code > 0x036f) limpo += ch;
+  }
+  return limpo;
+}
+
+function contemTermoBloqueado(texto) {
+  const t = normalizar(texto);
+  return PALAVRAS_BLOQUEADAS.some((p) => t.includes(p));
+}
 
 // GABDIGEP não entra na contagem do ranking (é a equipe que fez o jogo), mas a
 // linha continua aparecendo na lista -- "rankReal" é a posição só entre quem
@@ -58,10 +94,23 @@ export async function onRequestPost(context) {
   if (!Number.isFinite(pontuacao) || pontuacao < 0 || pontuacao > MAX_PONTUACAO) {
     return Response.json({ erro: 'Pontuação inválida.' }, { status: 400 });
   }
+  if (contemTermoBloqueado(nome) || contemTermoBloqueado(unidade)) {
+    return Response.json({ erro: 'Nome ou unidade contém termo não permitido.' }, { status: 400 });
+  }
+
+  const sessaoId = lerCookie(context.request.headers.get('Cookie'), COOKIE_NOME);
+  if (sessaoId) {
+    const recente = await context.env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM pontuacoes WHERE sessao_id = ? AND criado_em > datetime('now', ?)"
+    ).bind(sessaoId, `-${JANELA_MIN_SEGUNDOS} seconds`).first();
+    if (recente.total > 0) {
+      return Response.json({ erro: 'Aguarde alguns segundos antes de enviar outra pontuação.' }, { status: 429 });
+    }
+  }
 
   await context.env.DB.prepare(
-    'INSERT INTO pontuacoes (nome, unidade, pontuacao) VALUES (?, ?, ?)'
-  ).bind(nome, unidade, pontuacao).run();
+    'INSERT INTO pontuacoes (nome, unidade, pontuacao, sessao_id) VALUES (?, ?, ?, ?)'
+  ).bind(nome, unidade, pontuacao, sessaoId).run();
 
   return Response.json({ ok: true }, { status: 201 });
 }
