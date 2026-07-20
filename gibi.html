@@ -79,6 +79,12 @@
       <div class="eyebrow">A trilogia em quadrinhos</div>
       <h1>Heróis contra a <span class="accent">burocracia</span></h1>
       <p>Três edições, um cidadão comum e a equipe que faz a Justiça andar nos bastidores. Do "Chamado" ao "Efeito Cascata" — escolha uma edição para começar a leitura.</p>
+      <div class="gibi-acoes">
+        <a class="btn outline" href="gibi-assets/digep-por-dentro-completo.pdf" download>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Baixar gibi completo (PDF)
+        </a>
+      </div>
     </div>
 
     <div class="editions" id="editionsGrid"></div>
@@ -155,9 +161,17 @@ for (const ed of EDICOES_GIBI) {
       <div class="edition-num">Edição ${pad(ed.numero)}</div>
       <h3>${ed.titulo}</h3>
       <p class="tagline">"${ed.tagline}"</p>
+      ${lancado && ed.pdf ? `
+        <a class="edition-download" href="${ed.pdf}" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+          Baixar PDF
+        </a>
+      ` : ''}
     </div>
   `;
   if (lancado) {
+    const btnDownload = card.querySelector('.edition-download');
+    if (btnDownload) btnDownload.addEventListener('click', (e) => e.stopPropagation());
     card.addEventListener('click', () => abrirLeitor(ed));
   } else {
     card.addEventListener('click', () => {

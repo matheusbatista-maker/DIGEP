@@ -44,7 +44,7 @@ const EDICOES_GIBI = [
     tagline: 'Ele nunca vai saber os nomes de quem fez isso acontecer.',
     status: 'lancado',
     capa: 'gibi-assets/edicao-03-capa.png',
-    pdf: null,
+    pdf: 'gibi-assets/edicao-03.pdf',
     paginas: 8,
     pastaPaginas: 'gibi-assets/edicao-03-paginas'
   }
