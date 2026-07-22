@@ -111,9 +111,24 @@ export async function onRequestPost(context) {
     return Response.json({ erro: 'Aguarde alguns segundos antes de enviar outra pontuação.' }, { status: 429 });
   }
 
-  await context.env.DB.prepare(
-    'INSERT INTO pontuacoes (nome, unidade, pontuacao, sessao_id) VALUES (?, ?, ?, ?)'
-  ).bind(nome, unidade, pontuacao, sessaoId).run();
+  // mesma pessoa (nome + unidade, sem diferenciar maiúsculas/espaços) só
+  // aparece uma vez no placar -- guarda sempre a maior pontuação dela em vez
+  // de acumular uma linha por partida jogada.
+  const existente = await context.env.DB.prepare(
+    'SELECT id, pontuacao FROM pontuacoes WHERE UPPER(TRIM(nome)) = UPPER(TRIM(?)) AND UPPER(TRIM(unidade)) = UPPER(TRIM(?))'
+  ).bind(nome, unidade).first();
+
+  if (existente) {
+    if (pontuacao > existente.pontuacao) {
+      await context.env.DB.prepare(
+        "UPDATE pontuacoes SET pontuacao = ?, sessao_id = ?, criado_em = datetime('now') WHERE id = ?"
+      ).bind(pontuacao, sessaoId, existente.id).run();
+    }
+  } else {
+    await context.env.DB.prepare(
+      'INSERT INTO pontuacoes (nome, unidade, pontuacao, sessao_id) VALUES (?, ?, ?, ?)'
+    ).bind(nome, unidade, pontuacao, sessaoId).run();
+  }
 
   return Response.json({ ok: true }, { status: 201 });
 }
